@@ -1,0 +1,2051 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORMA — Outil de positionnement</title>
+<meta name="description" content="Outil d'atelier ORMA pour situer un projet ou une marque à plusieurs voix : curseurs, carte, brand key, archétypes, ton de voix.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ───────── Repères ORMA ───────── */
+:root {
+  --blanc: #ffffff;
+  --encre: #111111;
+  --texte: #333333;
+  --gris: #6b6b6b;
+  --filet: #dcdcdc;
+  --papier: #f6f3ec;
+  --papier-filet: #e7e1d4;
+  --sable: #9a9081;
+  --moi: #111111; /* couleur de la personne qui répond */
+
+  --serif: "EB Garamond", Georgia, serif;
+  --sans: "Archivo", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--blanc);
+  color: var(--encre);
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--encre); color: var(--blanc); }
+
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: inherit; }
+button { font: inherit; color: inherit; cursor: pointer; }
+input, textarea { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--encre); outline-offset: 3px; }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
+
+/* ───────── En-tête ───────── */
+.bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px 40px;
+  padding-top: 28px;
+  padding-bottom: 18px;
+}
+
+.marque { width: 150px; text-align: center; }
+.marque svg { display: block; width: 123px; height: auto; margin: 0 auto; }
+.marque-phases {
+  margin-top: 10px;
+  font-style: italic;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--texte);
+  white-space: nowrap;
+}
+
+.nav {
+  flex: 1;
+  max-width: 760px;
+  margin-top: 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 26px;
+  font-size: 20px;
+}
+.nav button {
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  white-space: nowrap;
+  color: var(--gris);
+  border-bottom: 1px solid transparent;
+}
+.nav button:hover { color: var(--encre); }
+.nav button[aria-current="page"] { color: var(--encre); border-bottom-color: var(--encre); }
+
+.tete {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 24px 56px;
+  align-items: end;
+  padding-top: 44px;
+  padding-bottom: 40px;
+}
+.tete h1 { font-size: clamp(34px, 5vw, 60px); line-height: 1.1; overflow-wrap: anywhere; }
+.tete-outil { font-style: italic; color: var(--gris); margin-top: 8px; }
+
+.qui-label { font-family: var(--sans); font-size: 13px; color: var(--gris); margin-bottom: 10px; }
+.qui-liste { display: flex; flex-wrap: wrap; gap: 8px; }
+.qui-liste.shake { animation: shake .4s; }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.qui-pied { margin-top: 12px; font-family: var(--sans); font-size: 13px; color: var(--gris); }
+
+.etat-base {
+  margin-top: 14px;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--texte);
+  background: var(--papier);
+  border: 1px solid var(--papier-filet);
+  padding: 8px 12px;
+}
+
+/* ───────── Pastilles de participant·es ───────── */
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--encre);
+  flex: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: .01em;
+  line-height: 1.3;
+  color: #444;
+  background: var(--papier);
+  border: 1px solid var(--papier-filet);
+  padding: 6px 11px;
+}
+button.chip:hover { border-color: var(--sable); }
+button.chip[aria-pressed="true"] { background: var(--encre); border-color: var(--encre); color: var(--blanc); }
+button.chip[aria-pressed="true"] .dot { box-shadow: 0 0 0 2px var(--blanc); }
+
+/* ───────── Boutons et champs ───────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid var(--encre);
+  border-radius: 0;
+  padding: 11px 19px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--encre);
+}
+.btn:hover { background: var(--papier); }
+.btn-plein { background: var(--encre); color: var(--blanc); }
+.btn-plein:hover { background: #333; }
+.btn[disabled] { opacity: .4; cursor: default; }
+
+.btn-texte {
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--gris);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.btn-texte:hover { color: var(--encre); }
+.btn-texte.confirme { color: #b3261e; font-weight: 500; }
+
+.champ {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--encre);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--filet);
+  border-radius: 0;
+  padding: 6px 0;
+}
+.champ::placeholder { color: #8a8a8a; }
+.champ:hover { border-bottom-color: var(--sable); }
+.champ:focus { outline: none; border-bottom-color: var(--encre); box-shadow: 0 1px 0 var(--encre); }
+textarea.champ { resize: vertical; font-family: var(--serif); font-size: 19px; line-height: 1.5; }
+
+.vide { font-style: italic; color: var(--gris); font-size: 17px; }
+
+/* ───────── Modules ───────── */
+.module { padding-bottom: 96px; }
+
+.module-tete { position: relative; border-top: 1px solid var(--encre); padding-top: 26px; margin-bottom: 36px; }
+.module-tete::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--encre);
+}
+.module-tete h2 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.15; margin-bottom: 12px; }
+.module-intro { max-width: 66ch; color: var(--texte); }
+
+.vues { display: flex; gap: 0; margin-bottom: 28px; }
+.vues .btn + .btn { border-left: 0; }
+.vues .btn[aria-pressed="true"] { background: var(--encre); color: var(--blanc); }
+
+.legende-equipe { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.legende-equipe .chip { cursor: default; }
+
+.bloc { margin-bottom: 56px; }
+.bloc h3 { font-style: italic; font-size: 24px; margin-bottom: 22px; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px 64px; align-items: start; }
+.col-radar { position: sticky; top: 24px; }
+
+.barre-enregistrer { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; }
+.etat-saisie { font-family: var(--sans); font-size: 13px; color: var(--gris); }
+
+/* ───────── Curseurs ───────── */
+.curseurs, .strips { display: flex; flex-direction: column; gap: 30px; }
+
+.poles { display: flex; justify-content: space-between; gap: 24px; font-family: var(--sans); font-size: 14px; font-weight: 500; line-height: 1.35; }
+.poles span:last-child { text-align: right; }
+.curseur-note { font-style: italic; font-size: 16px; line-height: 1.4; color: var(--gris); margin-top: 3px; }
+
+input[type="range"].glissiere {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin: 6px 0 0;
+  background:
+    linear-gradient(var(--encre), var(--encre)) center / 1px 9px no-repeat,
+    linear-gradient(var(--encre), var(--encre)) center / 100% 1px no-repeat;
+  cursor: pointer;
+}
+input[type="range"].glissiere::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--moi);
+  border: 3px solid var(--blanc);
+  box-shadow: 0 0 0 1px var(--encre);
+}
+input[type="range"].glissiere::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--moi);
+  border: 3px solid var(--blanc);
+  box-shadow: 0 0 0 1px var(--encre);
+}
+input[type="range"].glissiere::-moz-range-track { background: transparent; }
+.curseur .champ { margin-top: 2px; font-size: 13.5px; }
+
+/* Vue d'équipe : une ligne par curseur, un point par personne */
+.strip-piste { position: relative; margin-top: 8px; height: 24px; }
+.strip-piste::before { content: ""; position: absolute; left: 0; right: 0; bottom: 9px; height: 1px; background: var(--encre); }
+.strip-piste::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 1px; height: 9px; background: var(--encre); }
+.strip-point {
+  position: absolute;
+  bottom: 3px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  border: 2px solid var(--blanc);
+  z-index: 1;
+  transition: opacity .15s;
+}
+.strip-comments { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.strip-comments li { display: grid; grid-template-columns: 10px auto; gap: 9px; align-items: baseline; font-size: 16px; line-height: 1.4; color: var(--texte); transition: opacity .15s; }
+.strip-comments b { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--encre); margin-right: 6px; }
+
+.dim { opacity: .12; }
+
+/* ───────── Radar ───────── */
+.radar { width: 100%; max-width: 420px; margin: 0 auto; aspect-ratio: 1; }
+.radar-anneau, .radar-rayon { fill: none; stroke: var(--filet); stroke-width: 1; }
+.radar-index { font-family: var(--sans); font-size: 11px; fill: var(--gris); }
+.serie { transition: opacity .15s; }
+
+.radar-legende { list-style: none; margin: 18px 0 0; padding: 0; font-family: var(--sans); font-size: 13px; line-height: 1.4; columns: 2; column-gap: 28px; }
+.radar-legende li { display: grid; grid-template-columns: 20px 1fr; gap: 4px; break-inside: avoid; padding: 3px 0; color: var(--texte); }
+.radar-legende li span:first-child { color: var(--gris); font-variant-numeric: tabular-nums; }
+
+/* ───────── Carte ───────── */
+.poles-carte { margin-bottom: 36px; }
+.poles-carte-titre, .sous-titre { font-family: var(--sans); font-size: 13px; color: var(--gris); margin-bottom: 8px; }
+.poles-carte-liste { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; list-style: none; margin: 0; padding: 0; }
+.poles-carte-liste li { display: flex; align-items: center; gap: 6px; width: 170px; }
+.poles-carte-liste .champ { font-weight: 500; }
+.poles-carte-aide { margin-top: 10px; font-family: var(--sans); font-size: 13px; color: var(--gris); }
+.btn-x { background: none; border: 0; padding: 2px 6px; font-family: var(--sans); font-size: 16px; line-height: 1; color: var(--gris); }
+.btn-x:hover { color: var(--encre); }
+
+.carte-grille { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 40px 64px; align-items: start; }
+
+.ajout-point { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 12px; }
+.ajout-point .champ { flex: 1 1 220px; }
+.ajout-point span { font-style: italic; font-size: 16px; color: var(--gris); }
+
+.carte { position: relative; aspect-ratio: 1; max-width: 600px; background: var(--papier); border: 1px solid var(--papier-filet); cursor: crosshair; }
+.carte svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.carte-treillis { fill: none; stroke: var(--papier-filet); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.carte-contour { fill: var(--blanc); stroke: var(--encre); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.carte-pole {
+  position: absolute;
+  max-width: 34%;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  hyphens: auto;
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+.carte-point {
+  position: absolute;
+  transform: translate(-50%, -7px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.carte-point i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--blanc); box-shadow: 0 0 0 1px rgba(17, 17, 17, .35); }
+.carte-point span { font-family: var(--sans); font-size: 12px; font-weight: 500; line-height: 1.2; background: rgba(255, 255, 255, .88); padding: 1px 5px; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+.carte-point.actif { z-index: 2; }
+.carte-point.actif i { box-shadow: 0 0 0 2px var(--encre); }
+.carte-point.actif span { background: var(--encre); color: var(--blanc); }
+
+.points-liste { list-style: none; margin: 0; padding: 0; }
+.point-row { border-top: 1px solid var(--filet); padding: 14px 0 16px 14px; border-left: 2px solid transparent; display: grid; gap: 4px; }
+.point-row:last-child { border-bottom: 1px solid var(--filet); }
+.point-row.actif { border-left-color: var(--encre); background: var(--papier); padding-right: 14px; }
+.point-tete { display: flex; align-items: center; gap: 10px; }
+.point-tete .champ { font-family: var(--serif); font-size: 21px; font-weight: 500; border-bottom-color: transparent; padding: 0; }
+.point-par { font-family: var(--sans); font-size: 12.5px; color: var(--gris); white-space: nowrap; }
+.point-url { display: flex; align-items: baseline; gap: 14px; }
+.point-url a { font-family: var(--sans); font-size: 13px; font-weight: 500; white-space: nowrap; text-underline-offset: 3px; }
+.point-pied { display: flex; justify-content: flex-end; margin-top: 4px; }
+
+/* ───────── Brand key ───────── */
+.brandkey { display: grid; gap: 52px; max-width: 820px; }
+.bk-champ h3 { font-size: 26px; }
+.bk-question { font-style: italic; color: var(--gris); margin-bottom: 16px; }
+.bk-phrases { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 14px; }
+.bk-phrase { border-left: 3px solid var(--encre); padding: 2px 0 2px 16px; }
+.bk-texte { font-size: 21px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bk-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-family: var(--sans); font-size: 13px; color: var(--gris); }
+.bk-auteur { display: inline-flex; align-items: center; gap: 7px; color: var(--encre); font-weight: 500; }
+.bk-ajout { display: grid; gap: 10px; justify-items: start; }
+
+/* ───────── Archétypes ───────── */
+.roue { position: relative; width: min(100%, 500px); aspect-ratio: 1; margin: 0 auto 24px; border-radius: 50%; border: 1px solid var(--filet); }
+.roue-centre { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 44%; text-align: center; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+.roue-centre span { display: block; margin-top: 6px; font-family: var(--sans); font-size: 12.5px; color: var(--gris); }
+.roue-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(var(--angle)) translate(var(--rayon)) rotate(calc(-1 * var(--angle)));
+  background: var(--blanc);
+  border: 1px solid var(--encre);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+.roue-item:hover { background: var(--papier); }
+.roue-item[aria-pressed="true"] { background: var(--encre); color: var(--blanc); }
+.roue-choix { text-align: center; font-family: var(--sans); font-size: 14px; color: var(--texte); margin-bottom: 20px; min-height: 1.4em; }
+.roue-actions { justify-content: center; }
+
+.definitions { max-width: 1000px; margin-top: 64px; border-top: 1px solid var(--filet); padding-top: 28px; }
+.definitions h3 { font-style: italic; font-size: 24px; margin-bottom: 18px; }
+.definitions dl { margin: 0; columns: 2; column-gap: 56px; }
+.definitions div { break-inside: avoid; padding-bottom: 16px; }
+.definitions dt { font-family: var(--sans); font-size: 14px; font-weight: 600; }
+.definitions dd { margin: 2px 0 0; font-size: 17px; line-height: 1.45; color: var(--texte); }
+
+.classement { max-width: 820px; display: grid; gap: 0; }
+.rang { display: grid; grid-template-columns: 190px 1fr; gap: 6px 24px; align-items: center; border-top: 1px solid var(--filet); padding: 12px 0; }
+.rang-nom { font-family: var(--sans); font-size: 14px; font-weight: 500; }
+.rang-votes { display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px; align-items: center; }
+.rang.sans-vote .rang-nom { color: var(--gris); font-weight: 400; }
+
+/* ───────── Réglages ───────── */
+.reglages { display: grid; gap: 60px; max-width: 980px; }
+.reglages h3 { font-style: italic; font-size: 24px; margin-bottom: 6px; }
+.reglages-aide { color: var(--gris); font-size: 17px; margin-bottom: 18px; max-width: 66ch; }
+.reglages label { display: block; font-family: var(--sans); font-size: 13px; color: var(--gris); }
+.reglages .champ { font-size: 15px; }
+.reglages .champ-large { font-family: var(--serif); font-size: 24px; max-width: 520px; }
+
+.liste-reglages { list-style: none; margin: 0 0 16px; padding: 0; }
+.liste-reglages > li { border-top: 1px solid var(--filet); padding: 10px 0; }
+.liste-reglages > li:last-child { border-bottom: 1px solid var(--filet); }
+
+.participant-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.pastille { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--blanc); box-shadow: 0 0 0 1px var(--encre); padding: 0; }
+.nuancier { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 0 6px; }
+.nuancier button { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--blanc); box-shadow: 0 0 0 1px var(--filet); padding: 0; }
+.nuancier button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--encre); }
+.nuancier button[disabled] { opacity: .18; cursor: default; }
+
+.axe-row { display: grid; grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; }
+.axe-row .fleche { text-align: center; color: var(--gris); font-family: var(--sans); font-size: 14px; }
+.axe-row .axe-note { grid-column: 1 / 4; font-family: var(--serif); font-style: italic; font-size: 17px; }
+.axe-row .champ:not(.axe-note) { font-weight: 500; }
+.groupe-reglages { margin-bottom: 34px; }
+.groupe-reglages .champ-titre { font-family: var(--serif); font-size: 21px; font-style: italic; max-width: 420px; margin-bottom: 8px; }
+
+.atelier-form { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 14px 20px; }
+.atelier-form > div { flex: 1 1 260px; max-width: 420px; }
+.lien-atelier { font-family: var(--mono); font-size: 12.5px; color: #444; background: var(--papier); border: 1px solid var(--papier-filet); padding: 8px 11px; overflow-wrap: anywhere; margin-bottom: 18px; }
+
+/* ───────── Pied de page ───────── */
+.pied { border-top: 1px solid var(--encre); padding: 40px 40px 48px; text-align: center; }
+.pied svg { display: block; width: 107px; height: auto; margin: 0 auto 18px; }
+.pied p { font-size: 14px; color: #777; }
+.pied .marque-phases { font-size: 14px; color: var(--gris); margin: 0 0 14px; }
+
+/* ───────── Message bref ───────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--encre);
+  color: var(--blanc);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 11px 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 100;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ───────── Écrans étroits ───────── */
+@media (max-width: 900px) {
+  .tete, .split, .carte-grille { grid-template-columns: minmax(0, 1fr); }
+  .col-radar { position: static; }
+  .definitions dl { columns: 1; }
+}
+@media (max-width: 768px) {
+  body { font-size: 17px; }
+  .wrap { padding-left: 20px; padding-right: 20px; }
+  .bar { padding-top: 18px; padding-bottom: 12px; gap: 10px; }
+  .marque { width: auto; }
+  .marque svg { width: 88px; }
+  .marque-phases { font-size: 8.5px; }
+  .nav { flex: 0 0 100%; max-width: none; margin: 6px -20px 0; padding: 0 20px 4px; justify-content: flex-start; gap: 22px; font-size: 17px; overflow-x: auto; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .tete { padding-top: 28px; padding-bottom: 32px; }
+  .module { padding-bottom: 72px; }
+  .radar-legende { columns: 1; }
+  .rang { grid-template-columns: minmax(0, 1fr); }
+  .axe-row { grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); }
+  .axe-row .axe-note { grid-column: 1 / -1; }
+  .axe-row .btn-texte { grid-column: 1 / -1; justify-self: end; }
+  .poles-carte-liste li { width: calc(50% - 11px); }
+  .roue-item { font-size: 11px; padding: 5px 7px; white-space: normal; max-width: 84px; line-height: 1.15; text-align: center; }
+  .roue-centre { font-size: 17px; }
+  .pied { padding: 32px 20px 40px; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="ormaGlyph" d="M1527 655c4.46 3.37 6.9 5.67 9 11 .47 3.91.49 7.81.51 11.74l.06 3.41c.05 3.57.08 7.15.12 10.73.03 2.42.07 4.85.1 7.28.09 5.95.15 11.89.21 17.84l2 3c6.52 0 7.6-1.21 12.31-4.81.6-.45 1.19-.91 1.81-1.37 2.78-2.14 5.5-4.23 7.88-6.82h2c.25-.56.49-1.11.75-1.69 3.05-5.65 7.03-8.81 12.31-12.19.67-.43 1.33-.86 2.02-1.3 1.35-.87 2.69-1.74 4.04-2.6 1.66-1.08 3.29-2.19 4.92-3.32 5.3-3.6 9.93-5.72 16.16-7.17 3-.78 5.7-1.87 8.55-3.11 18.24-7.73 39.24-13.48 59.25-11.62.71.06 1.43.11 2.16.17 12.09 1.01 21.7 4.07 32.43 9.64 3.89 2.01 7.66 3.31 11.85 4.57 7.87 2.6 12.94 7.75 18.56 13.62v2l3 1c4.09 5.78 6.52 11.61 8.77 18.28 1.48 4.24 3.16 7.32 6.23 10.72 11.43 0 15.87-5.48 24-13h2v-2c.51-.41.51-.41 3.06-2.5 2.69-2.28 4.92-4.63 7.13-7.38 4.45-5.22 10.03-8.53 15.81-12.12.81-.55 1.63-1.1 2.47-1.66 5.99-3.9 12.25-6.08 19.01-8.19 2.78-.91 5.28-1.88 7.9-3.15 24.63-11.38 53.6-12.97 79.62-6 5.04 1.86 9.61 4.44 14.26 7.1 2.69 1.39 5.54 2.23 8.43 3.15 9.38 3.45 18.5 11.7 23.35 20.51 1.78 4.13 3.2 8.4 4.64 12.66 1.25 3.38 2.7 6.46 4.38 9.64 13.15 25.87 10.38 57.56 10.35 85.79 0 5.26.01 10.51.03 15.77.04 14.45.05 28.89.06 43.33.01 13.29.03 26.57.07 39.85.02 6.23.02 12.45.02 18.68-.01 3.88.01 7.76.02 11.64v5.35c-.04 8.72.24 17.22 1.68 25.85.11.68.22 1.37.34 2.08 1.18 6.3 4.15 10.89 8.37 15.6.62.22 1.24.43 1.88.66 2.85 1 5.71 2.01 8.56 3.03.48.17.48.17 2.95 1.03 16.84 6.02 16.84 6.02 21.61 13.28 1 9 1 9-4 16-11.1 4.52-22.52 3.08-34.27 2.34-2.32-.13-4.63-.27-6.94-.41-3.57-.21-7.13-.43-10.7-.65-22.64-1.39-45-1.55-67.65-.48-2.97.14-5.93.27-8.89.4-9.48.43-18.94.94-28.4 1.6-4.22.27-8.42.42-12.65.45l-2.22.06c-6.48.05-10.85-1.69-16.28-5.31-1.05-3.15-1.1-5.39-1.06-8.69.01-.99.02-1.99.02-3.01.06-3.33 1.86-4.99 3.97-7.43 5.07-4.59 11.99-6.32 18.45-8.11.76-.21 1.51-.42 2.29-.64 1.48-.4 2.96-.79 4.45-1.16 4.99-1.32 7.53-3.02 10.88-6.96.65-2.5 1.3-5 1.94-7.5.18-.7.36-1.39.55-2.11l.54-2.11c.16-.63.32-1.26.49-1.9 1.21-5.99 1.61-11.86 1.61-17.96.01-.71.01-1.43.01-2.17.01-2.39.01-4.77.01-7.16 0-1.71 0-3.43.01-5.15 0-4.66.01-9.31.01-13.96v-8.73c.01-10.17.02-20.33.02-30.5-.01-9.46.01-18.92.02-28.38.01-8.13.02-16.27.02-24.4 0-4.86 0-9.71.01-14.56.01-4.57.01-9.13 0-13.7 0-1.67.01-3.34.01-5.01.03-8.45-.16-16.46-2.25-24.7q-.495-2.46-.96-4.92c-.33-1.61-.65-3.22-.98-4.83-.15-.81-.31-1.62-.47-2.46-.96-4.7-2.29-8.52-4.59-12.79v-2l-3-1a139 139 0 0 1-5-5v-2c-.72-.27-1.44-.54-2.19-.81-2.81-1.19-2.81-1.19-5.12-2.63-15.18-8.82-38.47-7.87-55-3.56-3.36 1.25-6.25 2.8-9.14 4.91C1788 735 1788 735 1785 736v2c-.51.35-1.02.7-1.54 1.07-11.72 8.41-19.89 20.88-23.46 34.93-1.25 8.51-1.15 17.01-1.15 25.59 0 1.67 0 3.34-.01 5.02 0 4.52-.01 9.05-.01 13.57v8.5c-.01 9.91-.02 19.81-.02 29.72.01 9.2-.01 18.4-.02 27.6-.01 7.93-.02 15.85-.02 23.78 0 4.72 0 9.44-.01 14.16-.01 4.45-.01 8.89 0 13.34 0 1.62-.01 3.24-.01 4.86-.12 32.46-.12 32.46 9.4 43.22 3.26 2.89 7.05 3.98 11.16 5.26 1.7.58 3.4 1.17 5.09 1.76.8.27 1.6.55 2.43.84 7.04 2.54 11.8 5.72 16.17 11.78 1.05 9.48 1.05 9.48-1.63 13.4-2.64 3.08-5.52 4.46-9.37 5.6-8.41.54-16.92-.13-25.32-.66-2.32-.13-4.64-.27-6.96-.41-1.19-.07-2.38-.14-3.61-.21-20.06-1.19-40.01-2.3-60.11-1.72-1.07.03-2.15.05-3.25.08-13.15.33-26.25 1.06-39.37 1.98-17.08 1.18-17.08 1.18-24.32 1.32-1.22.02-2.45.05-3.71.08-4.29-.59-6.73-2.12-10.35-4.46-2.14-3.48-2.21-6.21-2.12-10.25.01-1.08.03-2.16.05-3.27.11-3.77 2.49-5.93 5.07-8.48 5.9-3.88 12.74-5.51 19.5-7.25 1.01-.27 2.03-.54 3.07-.81 2.47-.66 4.95-1.3 7.43-1.94 7.13-7.86 8.02-16.52 8.57-26.94l.12-2.24c.4-7.65.45-15.29.44-22.95v-4.59c.01-4.09.01-8.19 0-12.28 0-4.33 0-8.65.01-12.97 0-7.26 0-14.52-.01-21.77-.01-8.34 0-16.68 0-25.02.01-7.21.01-14.42 0-21.64 0-4.28 0-8.57.01-12.85.03-47.11.03-47.11-2.76-59.81-.09-.4-.09-.4-.52-2.38-1.59-6.62-4.23-11.53-8.86-16.56-.52-.63-1.05-1.26-1.59-1.9-8.11-9.05-19.82-14.43-31.85-15.37-3.71-.1-7.41-.09-11.12-.04-1.25-.01-2.5-.01-3.79-.01-18.69.11-29.58 5.46-42.65 18.32-.87.83-1.74 1.67-2.64 2.53-15.17 15.88-15.52 34.64-15.49 55.24v4.93c-.01 4.43-.01 8.86 0 13.28 0 4.66 0 9.32-.01 13.98 0 7.82 0 15.64.01 23.46.01 9 0 18.01 0 27.02-.01 7.77-.01 15.54 0 23.3 0 4.63 0 9.25-.01 13.88 0 4.35 0 8.7.01 13.05v4.76c-.04 32.85-.04 32.85 10.13 44.57.56.18 1.12.36 1.69.55 25.04 8.18 25.04 8.18 31.31 17.45 1 8 1 8-4 16-10.12 4.67-20.9 3.05-31.77 2.34-2.23-.13-4.46-.27-6.69-.41-3.44-.21-6.88-.43-10.32-.65-15.1-.96-30.09-1.52-45.22-1.28l-2.3.03c-4.88.08-9.76.2-14.64.35l-2.21.06c-12.07.34-24.09 1.04-36.13 1.89-28.76 1.98-28.76 1.98-36.72-3.33-2.65-5.76-1.8-10.91-1-17 6.48-9.51 17.34-10.75 27.96-13.16 7.24-1.7 11.47-3.47 15.89-9.81 1.93-3.42 2.44-6.86 2.94-10.72.12-.83.23-1.65.35-2.51 1.21-9.24 1.28-18.46 1.25-27.77 0-1.92.01-3.83.01-5.75.02-5.14.01-10.28 0-15.43 0-5.41 0-10.83.01-16.25 0-9.09 0-18.18-.02-27.27-.02-10.46-.01-20.93.01-31.4.01-9.03.01-18.07 0-27.1 0-5.38 0-10.75.01-16.13.01-5.05 0-10.11-.02-15.16 0-1.84 0-3.69.01-5.53.03-8.87-.22-17.54-1.67-26.3-.11-.68-.22-1.36-.33-2.05-1.38-7.33-4.97-13.22-10.63-18.02-6.01-3.56-13.04-4.98-19.77-6.64-4-5-4-5-5-14 6.19-9.91 12.21-11.9 22.75-15.38 6.83-2.31 13.21-4.92 19.61-8.28 6.83-3.47 13.68-5.43 21.2-6.84 9.44-1.78 17.24-5.32 25.75-9.65 4.8-2.43 9.65-4.73 14.5-7.04.45-.21.45-.21 2.72-1.29 2.48-1.19 4.97-2.36 7.47-3.52l2.05-.96c4.18-1.89 7.36-2.32 11.95-2.04m805.422 38.754c2.65 2.31 5.12 4.73 7.58 7.25v2h2c14.47 21.74 19.14 38.45 19.16 64.46 0 1.73.01 3.46.01 5.19l.03 11.12c.01 5.87.03 11.75.05 17.62.06 16.7.12 33.39.15 50.08.02 9.24.05 18.48.09 27.71.02 4.88.03 9.76.04 14.63 0 4.59.01 9.18.04 13.77.01 1.67.01 3.34.01 5.02-.04 23.96 7.08 41.53 23.95 59.02 2.24 2.15 4.48 4.29 6.78 6.38.7.64 1.4 1.27 2.11 1.93 6.35 5.09 12.83 8.18 20.52 10.75.84.3 1.68.59 2.55.9 24.87 8.51 48.69 4.78 73.19-2.6 3.07-.91 6.16-1.73 9.26-2.53 4.46-1.2 8.23-2.79 12.31-4.95 6.74-3.54 13.58-6.48 20.69-9.19 1.14-.44 2.28-.88 3.46-1.33 2.6-.98 2.6-.98 8.6.02 4 4 4 4 4 9-5.01 4.84-10.06 8.27-16.24 11.48-2.62 1.44-4.97 3.01-7.39 4.77-4.42 3.19-9.02 5.91-13.75 8.62-5.29 3.04-10.24 6.2-15.06 9.94-4.95 3.83-9.84 6.68-15.56 9.19-.95.43-1.89.86-2.87 1.3-9.63 4.23-19.39 6.55-29.76 8.17-2.37.53-2.37.53-4.18 1.52-7.39 3.39-17.09 2.19-25 2.19-1.31.02-2.61.03-3.95.04-7.68.01-14.75-.59-22.24-2.22-1.69-.32-3.38-.63-5.06-.93-22.52-4.26-22.52-4.26-28.16-8.9-3.67-2.87-7.64-4.82-11.78-6.92-9.84-5.09-19.24-10.56-28.31-16.94-.41-.29-.41-.29-2.46-1.72-1.36-.97-2.71-1.97-4.03-3-14.2-10.31-38.16-10.17-54.64-7.59-12.55 2.25-22.83 8.32-32.65 16.21-24.02 19.09-53.81 25.92-83.91 22.79-7.27-1.45-13.58-4.41-20-8-1.15-.58-2.3-1.15-3.48-1.74-11.3-6-19.37-13.67-24.97-25.19-1.38-2.74-2.88-4.96-4.74-7.39-7.8-11.53-8.82-28.66-6.38-42.04 1.74-7.66 4.23-14.96 8.39-21.67 1.27-2.12 2.18-4.25 3.12-6.54 4.45-9.95 9.91-13.91 19.5-18.57 3.22-1.6 5.76-3.6 8.56-5.86 2.72-1.73 5.51-3.34 8.31-4.94 1.46-.84 2.91-1.69 4.36-2.53.72-.42 1.44-.83 2.18-1.26 2.12-1.25 4.18-2.56 6.25-3.89 3.53-2.22 7.12-3.94 10.96-5.57 1.39-.59 2.77-1.19 4.16-1.78.37-.16.37-.16 2.28-.97 4.86-2.07 9.71-4.2 14.56-6.31 2.83-1.24 5.67-2.47 8.5-3.69 2.01-.88 4-1.79 5.99-2.72 4.42-1.73 8.88-2.66 13.51-3.66 8.88-2.01 16.74-4.66 24.94-8.68 1.14-.56 2.29-1.12 3.47-1.7 2.34-1.15 4.67-2.32 7-3.51 2.43-1.23 4.85-2.44 7.31-3.62l1.89-.91c1.72-.84 3.45-1.66 5.17-2.49 5.36-3.01 9.27-6.23 12.16-11.77 2.05-7.71 2.3-15.62 2.26-23.55 0-.53 0-.53.01-3.2 0-2.21 0-4.43-.01-6.64-.01-3.34 0-6.68.01-10.02.03-38.1.03-38.1-9.06-48.68-1.98-1.81-4.01-3.37-6.21-4.91-.69-.52-1.38-1.05-2.1-1.58-2.24-1.61-4.52-3.03-6.9-4.42-.8-.49-1.61-.98-2.43-1.49-10.73-5.53-25.32-5.45-36.92-2.59-9.16 3.02-15.09 6.66-19.53 15.26-2.02 4.36-3.23 8.06-3.52 12.86-.07.99-.13 1.98-.21 3-.13 2.08-.26 4.15-.38 6.22-.52 7.19-1.53 13.5-7 18.59-.67.38-1.33.76-2.01 1.15-.33.2-.33.2-2.01 1.21-2.32 1.27-4.65 2.54-6.99 3.79-.38.2-.38.2-2.28 1.22-12.12 6.28-24.5 10.57-37.72 13.78-.66.19-1.32.39-2.01.6-2.92.58-5.76.49-8.74.46l-3.55-.03c-3.85-.05-5.61-1.79-8.7-4.03-4.01-5.39-4.2-10.45-4-17 3.31-18.86 13.83-31.41 29.33-42.33 3.09-1.94 6.2-3.33 9.57-4.69 2.25-1.05 3.97-2.31 5.91-3.86 4.14-3.28 8.62-5.46 13.36-7.75 2.26-1.1 4.42-2.23 6.58-3.5 2.31-1.33 4.58-2.57 6.97-3.75.7-.35 1.4-.7 2.13-1.06.35-.17.35-.17 2.15-1.06 1.28-.65 2.57-1.29 3.86-1.93 2-1 4-2.01 6-3 3.07-1.53 6.13-3.07 9.17-4.64 42.4-21.83 103.05-31.95 142.39.32m-141.23 192.06c-3.41 3.03-5.48 6.65-7.64 10.62-1.55 2.57-1.55 2.57-4.06 5.38-2.9 3.41-4.12 6.91-5.3 11.19l-.64 2.25c-3.25 12.36-2.34 22.5 4.06 33.52 1.73 2.8 3.53 5.52 5.39 8.23.51.77 1.01 1.54 1.54 2.33 3.16 4.56 6.32 7.42 11.46 9.67.36.18.36.18 2.19 1.12 9.84 4.43 22.05 4.52 32.45 1.99 10.58-4.09 18.33-11.41 25.36-20.11.56-.66 1.11-1.31 1.69-1.98 9.73-12.63 8.97-30.65 8.88-45.75-.01-3.3.03-6.59.06-9.9v-6.37c.01-.98.02-1.95.04-2.95-.09-6.68-1.52-11.73-5.67-17.05-19.08-16-54.02 5.8-69.81 17.81M1191 654l7 6c.36 7.86-.22 15.07-1.79 22.78-2.19 10.88-3.22 21.9-3.96 32.97-.06.75-.11 1.5-.17 2.27-.24 4.18 0 7.23 1.92 10.98 6.53-.28 11.15-2.61 16-7 1.41-2.12 2.5-4.25 3.61-6.54 2.68-4.74 6.64-8.55 10.39-12.46h2l.78-1.8c1.34-2.41 2.67-3.69 4.78-5.45 3.79-3.19 7.44-6.49 11.07-9.86 2.93-2.34 6.09-4.11 9.37-5.89.29-.16.29-.16 1.76-.98 20.95-11.74 42.13-18.67 66.09-12.68 6.43 1.98 12.33 5.37 18.15 8.66.93.52 1.86 1.04 2.82 1.57 3.6 2.36 5.72 5.61 6.78 9.78.74 4.9.58 9.83.59 14.77l.03 3.27c.03 16.63-4.3 27.85-15.97 39.73-1.39 1.33-2.81 2.62-4.25 3.88-.39.35-.39.35-2.38 2.1-5.52 4-13.26 6.42-20.12 5.96-7.76-1.43-15.02-5.01-22.24-8.06l-2.51-1.06c-1.62-.69-3.24-1.39-4.86-2.08a147 147 0 0 0-13.93-5.18c-1.96-.68-1.96-.68-5.21-2.37-10.02-3.51-20.17-1.18-29.75 2.69-2.5 1.26-4.91 2.58-7.29 4.05-1.71.95-1.71.95-3.71.95l-.7 1.55c-1.79 3.37-3.92 6.48-6.05 9.64-.45.67-.89 1.34-1.36 2.03-1.89 2.83-3.79 5.64-5.78 8.41-9.14 12.86-9.41 28.96-9.38 44.21-.01 1.56-.01 3.12-.02 4.67-.01 4.2-.01 8.39-.01 12.59 0 3.51-.01 7.03-.01 10.55-.01 8.3-.01 16.6-.01 24.9.01 8.53 0 17.07-.02 25.6-.02 7.36-.03 14.71-.02 22.07 0 4.38 0 8.76-.02 13.14q-.015 6.18 0 12.36c.01 1.51 0 3.01 0 4.51-.07 13.31.74 27.53 10.24 37.77 7.42 6.89 15.11 8.56 24.83 10.38 22 4.35 22 4.35 28.31 11.62 1 3.01 1.1 5.04 1.06 8.19-.01.9-.02 1.8-.02 2.73-.04 2.08-.04 2.08-3.04 7.08-11.74 7.55-32.48 3.02-45.87 2.14-18.24-1.19-36.42-1.45-54.69-1.4-4.06.01-8.12 0-12.18-.01-19.87-.05-39.62.55-59.45 1.81-28.86 1.81-28.86 1.81-39.81-2.54-2.77-3.98-3.84-7.14-4-12 1.08-4.49 2.5-7.92 6-11 1.81-.83 1.81-.83 3.85-1.46.38-.13.38-.13 2.31-.73.81-.25 1.63-.49 2.46-.75.84-.26 1.68-.51 2.54-.78 8.19-2.48 16.48-4.46 24.84-6.28.27-.91.54-1.82.81-2.75 1.11-3.02 2.24-4.76 4.19-7.25 1.13-2.3 1.13-2.3 2.12-4.75.34-.8.67-1.6 1.01-2.42 1.94-6.31 2.02-12.82 2-19.36 0-.41 0-.41.01-2.49.01-2.73.01-5.46.01-8.2 0-1.96 0-3.93.01-5.9 0-5.33.01-10.65.01-15.98v-10c.01-11.63.02-23.26.02-34.89-.01-10.83.01-21.66.02-32.49.01-9.31.02-18.61.02-27.92 0-5.56 0-11.11.01-16.67.01-5.22.01-10.45 0-15.67 0-1.92.01-3.83.01-5.74.01-2.62 0-5.24 0-7.86 0-.75.01-1.5.01-2.27-.08-12.9-4.91-23.03-12.26-33.39-5.84-2.72-11.77-4.41-18-6-5.26-9.47-5.26-9.47-4-16 4.12-7.94 10.65-9.24 18.65-11.83 4.76-1.66 9.34-3.7 13.96-5.72 4.73-2.02 9.53-3.77 14.39-5.45.69-.24 1.37-.48 2.08-.73 5.05-1.74 10.17-3.26 15.3-4.77l2.07-.61c3.02-.88 6.03-1.76 9.08-2.55 7.37-1.91 14.43-4.42 21.53-7.15 1.11-.42 2.22-.83 3.36-1.25 6.17-2.37 11.8-5.02 17.38-8.58 5.48-3.39 10.62-6.04 17.2-5.36m-378.297-34.633c2.64.51 5.25.94 7.91 1.33 8.34 1.23 16.4 2.49 24.39 5.3.67.22 1.34.43 2.03.65 4.29 1.37 8.49 2.93 12.69 4.55.69.27 1.38.53 2.09.8.69.27 1.39.54 2.11.82 4.04 1.52 7.96 2.68 12.2 3.56 11.62 2.68 22.86 10.55 31.16 18.93 3.23 3.21 6.64 6.16 10.09 9.13.64.55 1.27 1.09 1.92 1.66l3.82 3.28c1.26 1.08 2.51 2.17 3.76 3.27 3.11 2.71 6.11 5.09 9.69 7.17 7.75 5.08 10.94 13.11 14.87 21.21 1.97 3.73 4.3 7.06 6.78 10.47 2.52 3.52 4.8 7.18 7.1 10.85 1.54 2.43 3.16 4.79 4.81 7.15 5.24 7.85 8.35 16.56 11.42 25.43 1.08 3.08 2.26 6.11 3.48 9.14 6.81 17 6.81 17 7.63 26.11.25 2.7.52 5.39.83 8.09 1.45 12.74 1.89 25.35 1.83 38.17 0 1-.01 2.01-.01 3.04-.04 6.85-.14 13.68-.3 20.52l-.06 2.28c-.67 24.82-8.27 49.37-18.94 71.72-.42.91-.84 1.82-1.28 2.75-.36.75-.72 1.49-1.1 2.25-.36.75-.71 1.49-1.08 2.25-1.81 3.23-3.86 6.25-5.93 9.32-2.63 3.96-5.06 8.04-7.49 12.12-.26.43-.26.43-1.58 2.63-2.34 3.91-4.65 7.83-6.82 11.85-3.28 6.07-6.29 10.99-11.79 15.27-2.73 2.21-4.86 4.82-7.12 7.5-3.09 3.53-6.46 6.79-9.81 10.06h-2c-.11.29-.11.29-.67 1.73-1.75 2.98-3.93 4.59-6.65 6.71-2.93 2.3-5.67 4.55-8.3 7.22-2.1 2.06-3.62 3.25-6.26 4.47-.31.14-.31.14-1.87.88-1.84.81-3.7 1.59-5.56 2.36-3.81 1.63-7.36 3.62-10.94 5.7-1.41.8-2.83 1.59-4.24 2.39-.74.41-1.47.83-2.23 1.26-.75.42-1.51.85-2.28 1.28-.39.22-.39.22-2.32 1.32-10.19 5.73-19.97 10.4-31.37 13.12-2.48.6-4.94 1.29-7.4 1.97-16.34 4.27-32.16 4.13-48.91 3.59l-3-2 2-5c4.19-1.59 8.38-3.14 12.62-4.61 9.64-3.38 17.85-6.69 25.7-13.36 5.41-4.54 10.25-7.24 16.84-9.74 4.36-1.97 7.51-4.91 10.84-8.29l1.71-1.71c.43-.42.85-.85 1.29-1.29h2c.26-.58.53-1.16.8-1.75 1.25-2.34 2.67-4.11 4.38-6.12 3.05-3.82 5.25-7.79 7.32-12.19 2.34-4.97 4.9-8.94 8.71-12.91 6.43-7.31 10.28-16.89 14.41-25.59.28-.58.28-.58 1.7-3.54 8.79-18.4 8.79-18.4 11.24-26.9.21-.73.42-1.45.64-2.2 3.38-12.1 5.04-24.35 6.06-36.85.32-3.71.76-7.05 1.73-10.66 3.43-13.12 2.16-27.79 2.14-41.22-.01-3.56 0-7.12 0-10.68.02-30.05.02-30.05-2.64-39.3-1.15-4.87-1.39-9.93-1.87-14.9-3.92-37.32-3.92-37.32-13.62-50.19-1.1-2.1-2.16-4.23-3.19-6.37-6.92-14.09-14.54-28.54-25.81-39.63a128 128 0 0 1-3.19-4.18c-12.34-15.99-33.82-33.82-54.06-38.07-8.85-2.09-17.27-5.51-25.75-8.75l-1-5c6.51-6.51 25.27-3.28 33.7-1.63M707 619c.66.5.66.5 4 3-1.17 5.83-1.49 5.69-6 9-4.49 2.38-9.02 4.04-13.94 5.31-5.92 1.72-10.22 4.96-15.06 8.69-1.1.81-2.2 1.62-3.31 2.43-5.32 3.95-10.4 7.81-14.51 13.07-1.18 1.5-1.18 1.5-3.56 3.81-3.87 3.97-7.21 8.33-10.62 12.69h-2c-1.51 3.73-2.95 7.49-4.38 11.25-1.76 4.6-3.63 9.11-5.66 13.59-6.33 14.16-9.64 26.95-9.48 42.42.02 2.44 0 4.87-.03 7.3-.01 8.98.82 16.15 4.55 24.44.55 1.54 1.09 3.09 1.61 4.64 5.86 17.11 12.17 34.01 19.96 50.34 8.06 16.96 7.86 33.84 2.66 51.67-1.85 5.09-4.52 9.57-7.35 14.16-13.94 22.62-25.77 47.85-19.63 74.88 2.37 7.87 5.86 14.57 10.2 21.52 1.72 3.1 2.92 6.23 4.17 9.54 5.9 14.17 16.73 24.16 30.76 29.97 5.85 2.86 11.21 6.68 16.62 10.28v2c3.64 1.49 7.31 2.81 11.04 4.06 1.13.38 2.27.77 3.45 1.17 2.38.81 4.77 1.61 7.16 2.4l3.45 1.18c1.03.35 2.07.7 3.14 1.05 2.65 1.09 4.57 2.31 6.76 4.14l-1 4c-15.33 7.67-45-.57-60-5-.39-.11-.39-.11-2.37-.66-7.82-2.2-14.68-5.22-21.59-9.52-3.31-1.98-6.7-3.7-10.16-5.38-5.01-2.46-9.78-5.1-14.51-8.05-2.46-1.44-4.97-2.63-7.56-3.83-4.93-2.42-8.22-5.45-11.81-9.56-.55-.62-1.1-1.24-1.67-1.88-1.16-1.31-2.31-2.64-3.45-3.97-1.31-1.5-2.65-2.97-4-4.42-5.22-5.6-9.6-11.41-13.84-17.75-2.04-2.98-2.04-2.98-4.18-5.63-11.97-15.11-11.35-38.27-9.86-56.35.93-6.25 2.71-12.12 5-18l1.27-3.33c1.54-3.81 3.2-7.54 4.94-11.26 11.25-25.05 16.14-57.45 6.57-83.76-.97-2.39-1.96-4.76-2.97-7.13-2.45-5.92-4.42-12.01-6.43-18.08-.38-1.11-.75-2.23-1.13-3.37-1.11-3.35-2.18-6.71-3.25-10.07-.38-1.12-.76-2.23-1.15-3.38-2.67-8.36-3.45-16.16-3.32-24.85.03-2.1.02-4.19.01-6.29.01-7.36.59-13.67 3.46-20.48.49-1.48.97-2.95 1.44-4.44q.765-2.28 1.56-4.56c.25-.75.5-1.49.76-2.26 5.04-13.8 13.09-26.4 25.24-34.74.16-.33.16-.33 1-2h2c.27-.57.53-1.14.8-1.73 12.19-23.13 39.94-33.55 63.2-41.27 1.15-.39 2.3-.78 3.49-1.19 2.83-.96 5.67-1.89 8.51-2.81 1.03-.34 2.06-.68 3.12-1.02 12.78-4.08 24.46-6.53 37.88-5.98"/></defs></svg>
+
+<header>
+  <div class="wrap bar">
+    <div class="marque">
+      <svg viewBox="440 500 2220 620" role="img" aria-label="ORMA"><use href="#ormaGlyph" fill="#161615"/></svg>
+      <div class="marque-phases">{ récolter }&nbsp;&nbsp;( traduire )&nbsp;&nbsp;[ transmettre ]</div>
+    </div>
+    <nav class="nav" id="nav" aria-label="Modules">
+      <button type="button" data-target="module-1">Curseurs</button>
+      <button type="button" data-target="module-2">Carte</button>
+      <button type="button" data-target="module-3">Brand key</button>
+      <button type="button" data-target="module-4">Archétypes</button>
+      <button type="button" data-target="module-5">Ton de voix</button>
+      <button type="button" data-target="reglages">Réglages</button>
+    </nav>
+  </div>
+
+  <div class="wrap tete">
+    <div>
+      <h1 id="titre-projet">Votre projet</h1>
+      <p class="tete-outil">Outil de positionnement</p>
+    </div>
+    <div>
+      <p class="qui-label" id="qui-label">Qui répond sur cet appareil ?</p>
+      <div class="qui-liste" id="qui-liste" role="group" aria-labelledby="qui-label"></div>
+      <p class="qui-pied"><button type="button" class="btn-texte" id="qui-modifier">Ajouter ou retirer des participant·es</button></p>
+      <p class="etat-base" id="etat-base" hidden></p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="module-1" class="module" hidden>
+    <div class="module-tete">
+      <h2>Curseurs de positionnement</h2>
+      <p class="module-intro">Situer <span class="nom-projet">le projet</span> entre deux pôles, curseur par curseur. Le radar suit les réglages en direct ; une ligne de commentaire permet de dire pourquoi.</p>
+    </div>
+    <div class="vues" role="group" aria-label="Vue">
+      <button type="button" class="btn" data-vue="mine" aria-pressed="true">Ma vue</button>
+      <button type="button" class="btn" data-vue="team" aria-pressed="false">Vue de l'équipe</button>
+    </div>
+    <div class="legende-equipe" hidden></div>
+    <div class="groupes"></div>
+    <div class="barre-enregistrer">
+      <button type="button" class="btn btn-plein" data-action="save">Enregistrer mes curseurs</button>
+      <span class="etat-saisie" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section id="module-2" class="module" hidden>
+    <div class="module-tete">
+      <h2>Carte de positionnement</h2>
+      <p class="module-intro">Placer <span class="nom-projet">le projet</span>, ses concurrents et ses références selon leur équilibre entre plusieurs pôles. La carte est commune : chacun·e y ajoute ses points.</p>
+    </div>
+
+    <div class="poles-carte">
+      <p class="poles-carte-titre" id="poles-titre">Pôles de la carte</p>
+      <ul class="poles-carte-liste" id="m2-poles" aria-labelledby="poles-titre"></ul>
+      <p class="poles-carte-aide">De trois à six pôles. Renommer un pôle ne déplace aucun point ; en ajouter ou en retirer un replace les points selon les pôles restants.</p>
+    </div>
+
+    <div class="carte-grille">
+      <div>
+        <div class="ajout-point">
+          <input id="m2-nom" class="champ" type="text" maxlength="60" placeholder="Nom du point à placer" aria-label="Nom du point à placer">
+          <span>puis cliquer sur la carte</span>
+        </div>
+        <div class="carte" id="m2-carte"></div>
+      </div>
+      <div>
+        <p class="sous-titre">Points placés</p>
+        <p class="vide" id="m2-vide">Aucun point pour l'instant. Nommer un point, puis cliquer sur la carte.</p>
+        <ul class="points-liste" id="m2-liste"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="module-3" class="module" hidden>
+    <div class="module-tete">
+      <h2>Brand key</h2>
+      <p class="module-intro">Cinq questions pour formuler <span class="nom-projet">le projet</span>. Chaque phrase porte le nom et la couleur de la personne qui l'a écrite.</p>
+    </div>
+    <div class="brandkey" id="m3-champs"></div>
+  </section>
+
+  <section id="module-4" class="module" hidden>
+    <div class="module-tete">
+      <h2>Roue des archétypes</h2>
+      <p class="module-intro">Choisir un ou deux archétypes qui incarnent le mieux <span class="nom-projet">le projet</span>.</p>
+    </div>
+    <div class="vues" role="group" aria-label="Vue">
+      <button type="button" class="btn" data-vue="mine" aria-pressed="true">Ma vue</button>
+      <button type="button" class="btn" data-vue="team" aria-pressed="false">Vue de l'équipe</button>
+    </div>
+    <div id="m4-mine">
+      <div class="roue" id="m4-roue"></div>
+      <p class="roue-choix" id="m4-choix" aria-live="polite"></p>
+      <div class="barre-enregistrer roue-actions">
+        <button type="button" class="btn btn-plein" id="m4-save">Enregistrer mes archétypes</button>
+        <span class="etat-saisie" id="m4-etat" aria-live="polite"></span>
+      </div>
+      <div class="definitions">
+        <h3>Définitions</h3>
+        <dl id="m4-definitions"></dl>
+      </div>
+    </div>
+    <div id="m4-team" hidden>
+      <p class="vide" id="m4-team-vide">Personne n'a encore enregistré ses archétypes.</p>
+      <div class="classement" id="m4-classement"></div>
+    </div>
+  </section>
+
+  <section id="module-5" class="module" hidden>
+    <div class="module-tete">
+      <h2>Ton de voix</h2>
+      <p class="module-intro">Régler la manière dont <span class="nom-projet">le projet</span> s'exprime, à l'écrit comme à l'oral.</p>
+    </div>
+    <div class="vues" role="group" aria-label="Vue">
+      <button type="button" class="btn" data-vue="mine" aria-pressed="true">Ma vue</button>
+      <button type="button" class="btn" data-vue="team" aria-pressed="false">Vue de l'équipe</button>
+    </div>
+    <div class="legende-equipe" hidden></div>
+    <div class="groupes"></div>
+    <div class="barre-enregistrer">
+      <button type="button" class="btn btn-plein" data-action="save">Enregistrer mon ton de voix</button>
+      <span class="etat-saisie" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section id="reglages" class="module" hidden>
+    <div class="module-tete">
+      <h2>Réglages de l'atelier</h2>
+      <p class="module-intro">À préparer avant la séance : le nom du projet, les participant·es, les curseurs. Tout reste modifiable en cours d'atelier.</p>
+    </div>
+    <div class="reglages">
+      <div>
+        <h3>Projet</h3>
+        <label for="rg-projet">Nom du projet ou de la marque</label>
+        <input id="rg-projet" class="champ champ-large" type="text" maxlength="60">
+      </div>
+
+      <div>
+        <h3>Participant·es</h3>
+        <p class="reglages-aide">Une couleur par personne, reprise dans tous les modules. Huit au maximum, pour que les couleurs restent faciles à distinguer.</p>
+        <ul class="liste-reglages" id="rg-participants"></ul>
+        <button type="button" class="btn" id="rg-ajout-participant">Ajouter un·e participant·e</button>
+      </div>
+
+      <div>
+        <h3>Curseurs de positionnement</h3>
+        <p class="reglages-aide">Deux pôles par curseur, et une ligne d'explication affichée sous le curseur.</p>
+        <div id="rg-groupes"></div>
+      </div>
+
+      <div>
+        <h3>Ton de voix</h3>
+        <ul class="liste-reglages" id="rg-ton"></ul>
+        <button type="button" class="btn" id="rg-ajout-ton">Ajouter un curseur</button>
+      </div>
+
+      <div>
+        <h3>Ateliers</h3>
+        <p class="reglages-aide">Un atelier par mission : chaque atelier a son propre lien, ses propres réglages et ses propres réponses.</p>
+        <p class="lien-atelier" id="rg-lien"></p>
+        <form class="atelier-form" id="rg-atelier-form">
+          <div>
+            <label for="rg-atelier-nom">Nom du nouvel atelier</label>
+            <input id="rg-atelier-nom" class="champ" type="text" maxlength="40" placeholder="Nom du client ou de la mission">
+          </div>
+          <button type="submit" class="btn">Ouvrir un atelier vierge</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pied">
+  <svg viewBox="440 500 2220 620" role="img" aria-label="ORMA"><use href="#ormaGlyph" fill="#161615"/></svg>
+  <p class="marque-phases">{ récolter }&nbsp;&nbsp;( traduire )&nbsp;&nbsp;[ transmettre ]</p>
+  <p>contact@ormastudio.space — Paris, France</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════════
+   1. BASE PARTAGÉE
+   Tant que ces clés sont vides, l'outil fonctionne en mode local : les
+   réponses restent dans le navigateur de l'appareil. Pour que tous les
+   participant·es voient les mêmes données, coller ici les clés d'un
+   projet Firebase (voir LISEZ-MOI.md).
+   ══════════════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. CONTENU PAR DÉFAUT D'UN NOUVEL ATELIER
+   Tout ce qui suit se modifie ensuite dans l'onglet « Réglages ».
+   ══════════════════════════════════════════════════════════════════════ */
+
+// Couleurs des participant·es : huit teintes nettement séparées, dans un
+// ordre fixe. Chaque personne garde la sienne dans tous les modules.
+const PALETTE = [
+  { hex: "#2a78d6", nom: "bleu" },
+  { hex: "#eb6834", nom: "orange" },
+  { hex: "#1baf7a", nom: "turquoise" },
+  { hex: "#eda100", nom: "jaune" },
+  { hex: "#e87ba4", nom: "rose" },
+  { hex: "#008300", nom: "vert" },
+  { hex: "#4a3aa7", nom: "violet" },
+  { hex: "#e34948", nom: "rouge" },
+];
+const MAX_PARTICIPANTS = PALETTE.length;
+const MIN_POLES = 3;
+const MAX_POLES = 6;
+
+function defaultConfig() {
+  const axe = (a, b, note) => ({ id: uid(), a, b, note });
+  return {
+    projectName: "Votre projet",
+    participants: [1, 2, 3].map((n, i) => ({ id: uid(), name: `Participant·e ${n}`, color: PALETTE[i].hex })),
+    sliderGroups: [
+      {
+        id: "generaux",
+        title: "Axes généraux",
+        axes: [
+          axe("Sur-mesure", "Standardisé", "Chaque projet est-il conçu pour un seul contexte, ou décliné d'une offre type ?"),
+          axe("Petite échelle", "Grande échelle", "La taille des projets et des publics visés."),
+          axe("Accessible", "Premium", "Le niveau de prix, et ce qu'il signale."),
+          axe("Codes classiques", "Créativité forte", "Reprendre les codes du secteur ou s'en écarter."),
+          axe("Décontracté", "Cérémoniel", "Le degré de formalité de la relation et des formats."),
+          axe("Confidentiel", "Médiatique", "Rester discret ou chercher la visibilité."),
+          axe("Public spectateur", "Public acteur", "La place laissée à celles et ceux à qui l'on s'adresse."),
+          axe("Ponctuel", "Récurrent", "Des projets uniques ou une relation qui se répète."),
+          axe("Local", "International", "Le territoire d'intervention."),
+          axe("Exécutant", "Auteur", "Répondre à une commande ou porter un point de vue."),
+        ],
+      },
+      {
+        id: "specifiques",
+        title: "Axes spécifiques au projet",
+        axes: [
+          axe("Héritage", "Invention", "S'appuyer sur ce qui existe ou proposer du neuf."),
+          axe("Récit en arrière-plan", "Récit au cœur", "La place de l'histoire racontée dans l'offre."),
+          axe("Savoir-faire discret", "Savoir-faire montré", "Ce que l'on laisse voir de la fabrication."),
+          axe("Objet", "Expérience", "Ce que l'on retient : une chose ou un moment."),
+        ],
+      },
+    ],
+    toneAxes: [
+      axe("Sérieux", "Drôle", "La place de l'humour."),
+      axe("Formel", "Décontracté", "Le niveau de langue : adresse, tournures, vocabulaire."),
+      axe("Respectueux", "Impertinent", "Ménager les conventions ou les bousculer."),
+      axe("Enthousiaste", "Factuel", "Exprimer l'émotion ou s'en tenir aux faits."),
+    ],
+    map: {
+      poles: [
+        { id: uid(), label: "Recherche" },
+        { id: uid(), label: "Design" },
+        { id: uid(), label: "Stratégie" },
+      ],
+    },
+  };
+}
+
+const BRAND_KEY = [
+  { id: "essence", label: "Essence", question: "L'idée centrale, en une phrase." },
+  { id: "valeurs", label: "Valeurs", question: "Ce qui guide les choix, en trois ou quatre mots." },
+  { id: "personnalite", label: "Personnalité", question: "Si le projet était une personne : son caractère, sa manière d'être." },
+  { id: "benefices", label: "Bénéfices et preuves", question: "Ce que l'on apporte concrètement, et ce qui le prouve." },
+  { id: "cible", label: "Cible", question: "À qui l'on s'adresse en priorité." },
+];
+
+const ARCHETYPES = [
+  { id: "innocent", label: "Innocent", def: "Recherche l'optimisme et la simplicité. Une marque Innocent inspire confiance par son honnêteté, sa transparence et sa promesse de bonheur accessible." },
+  { id: "sage", label: "Sage", def: "Cherche la vérité et le savoir. Une marque Sage guide et informe : elle inspire confiance par son expertise et sa capacité à éclairer des choix complexes." },
+  { id: "explorateur", label: "Explorateur", def: "Aspire à la liberté et à la découverte. Une marque Explorateur invite à sortir des sentiers battus et à vivre des expériences nouvelles." },
+  { id: "rebelle", label: "Rebelle", def: "Bouscule les codes établis. Une marque Rebelle assume la rupture et séduit celles et ceux qui veulent se démarquer des normes." },
+  { id: "magicien", label: "Magicien", def: "Transforme le réel en expérience mémorable. Une marque Magicien crée l'émerveillement et rend possible ce qui semblait hors d'atteinte." },
+  { id: "heros", label: "Héros", def: "Relève des défis avec courage et détermination. Une marque Héros inspire par la performance, la maîtrise et la victoire sur l'adversité." },
+  { id: "amoureux", label: "Amoureux", def: "Crée du lien, de l'intimité et du plaisir sensoriel. Une marque Amoureux séduit par l'esthétique, l'émotion et la qualité de la relation." },
+  { id: "bouffon", label: "Bouffon", def: "Fait vivre l'instant présent avec humour et spontanéité. Une marque Bouffon désamorce le sérieux et crée de la complicité par le rire." },
+  { id: "peuple", label: "Homme / femme du peuple", def: "Recherche l'appartenance et la proximité. Une marque du peuple valorise l'authenticité, l'accessibilité et les valeurs communes à toutes et tous." },
+  { id: "protecteur", label: "Protecteur", def: "Prend soin et protège. Une marque Protecteur inspire confiance par sa bienveillance, sa fiabilité et l'attention qu'elle porte aux autres." },
+  { id: "createur", label: "Créateur", def: "Imagine et construit ce qui n'existe pas encore. Une marque Créateur valorise l'originalité, le savoir-faire et l'expression d'une vision singulière." },
+  { id: "souverain", label: "Souverain", def: "Incarne l'excellence, la maîtrise et le prestige. Une marque Souverain inspire le respect par son autorité et son exigence de qualité." },
+];
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. OUTILS
+   ══════════════════════════════════════════════════════════════════════ */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const now = () => new Date().toISOString();
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+}
+
+function slugify(str) {
+  return (str || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Petit constructeur d'éléments : le texte passe toujours par textContent.
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k === "value") el.value = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+function s(tag, attrs, ...kids) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) if (v != null) el.setAttribute(k, v);
+  for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return el;
+}
+
+// Met une liste à jour sans recréer les lignes déjà présentes : un champ
+// en cours de saisie ou un bouton en cours de clic ne disparaît jamais.
+function syncList(container, items, keyOf, create, update) {
+  const existing = new Map();
+  for (const el of [...container.children]) existing.set(el.dataset.key, el);
+  let prev = null;
+  items.forEach((item, i) => {
+    const key = String(keyOf(item));
+    let el = existing.get(key);
+    if (el) existing.delete(key);
+    else {
+      el = create(item);
+      el.dataset.key = key;
+    }
+    update(el, item, i);
+    const wanted = prev ? prev.nextSibling : container.firstChild;
+    if (el !== wanted) container.insertBefore(el, wanted);
+    prev = el;
+  });
+  existing.forEach((el) => el.remove());
+}
+
+function setValue(input, value) {
+  if (document.activeElement !== input && input.value !== value) input.value = value;
+}
+function setText(el, value) {
+  if (el.textContent !== value) el.textContent = value;
+}
+
+function formatTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  return d.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+let toastTimer = null;
+function toast(message) {
+  const el = $("#toast");
+  el.textContent = message;
+  el.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("visible"), 2600);
+}
+
+// Bouton de retrait en deux temps : le premier clic demande confirmation.
+function confirmButton(label, onConfirm) {
+  let timer = null;
+  const btn = h("button", { type: "button", class: "btn-texte", text: label });
+  const reset = () => {
+    clearTimeout(timer);
+    btn.classList.remove("confirme");
+    btn.textContent = label;
+  };
+  btn.addEventListener("click", () => {
+    if (btn.classList.contains("confirme")) {
+      reset();
+      onConfirm();
+    } else {
+      btn.classList.add("confirme");
+      btn.textContent = "Confirmer le retrait";
+      timer = setTimeout(reset, 4000);
+    }
+  });
+  btn.addEventListener("blur", reset);
+  return btn;
+}
+
+function normalizeUrl(raw) {
+  let v = (raw || "").trim();
+  if (!v) return "";
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = "https://" + v;
+  try {
+    const u = new URL(v);
+    if ((u.protocol === "http:" || u.protocol === "https:") && u.hostname.includes(".")) return u.href;
+  } catch (e) { /* adresse illisible */ }
+  return null;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. STOCKAGE : local (navigateur) ou partagé (Firestore)
+   ══════════════════════════════════════════════════════════════════════ */
+const params = new URLSearchParams(location.search);
+const ATELIER = slugify(params.get("atelier")) || "demo";
+const LOCAL_PREFIX = "orma-positionnement:";
+
+const safeStorage = {
+  get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } },
+  set(key, value) { try { localStorage.setItem(key, value); } catch (e) { /* stockage indisponible */ } },
+};
+
+function createLocalStore(atelier) {
+  const KEY = LOCAL_PREFIX + atelier;
+  let mem = { config: null, cols: {} };
+  const read = () => {
+    const raw = safeStorage.get(KEY);
+    if (raw) { try { mem = JSON.parse(raw); } catch (e) { /* données illisibles : on repart de zéro */ } }
+    if (!mem.cols) mem.cols = {};
+  };
+  const write = () => safeStorage.set(KEY, JSON.stringify(mem));
+  const cfgSubs = new Set();
+  const colSubs = {};
+  const list = (col) => Object.entries(mem.cols[col] || {}).map(([id, d]) => ({ ...clone(d), id }));
+  const emitCfg = () => cfgSubs.forEach((fn) => fn(mem.config ? clone(mem.config) : null));
+  const emitCol = (col) => (colSubs[col] || []).forEach((fn) => fn(list(col)));
+  read();
+  window.addEventListener("storage", (e) => {
+    if (e.key !== KEY) return;
+    read();
+    emitCfg();
+    Object.keys(colSubs).forEach(emitCol);
+  });
+  return {
+    shared: false,
+    async loadConfig() { return mem.config ? clone(mem.config) : null; },
+    watchConfig(fn) { cfgSubs.add(fn); },
+    async saveConfig(config) { mem.config = clone(config); write(); emitCfg(); },
+    watch(col, fn) { (colSubs[col] = colSubs[col] || []).push(fn); fn(list(col)); },
+    async set(col, id, data) { (mem.cols[col] = mem.cols[col] || {})[id] = clone(data); write(); emitCol(col); },
+    async add(col, data) { const id = uid(); await this.set(col, id, data); return id; },
+    async update(col, id, patch) {
+      const cur = mem.cols[col] && mem.cols[col][id];
+      if (!cur) return;
+      Object.assign(cur, clone(patch));
+      write();
+      emitCol(col);
+    },
+    async remove(col, id) { if (mem.cols[col]) delete mem.cols[col][id]; write(); emitCol(col); },
+  };
+}
+
+async function createFirestoreStore(atelier) {
+  const base = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const [{ initializeApp }, fs] = await Promise.all([
+    import(base + "firebase-app.js"),
+    import(base + "firebase-firestore.js"),
+  ]);
+  const db = fs.getFirestore(initializeApp(FIREBASE_CONFIG));
+  const root = fs.doc(db, "ateliers", atelier);
+  const col = (name) => fs.collection(root, name);
+  const fail = (err) => { console.error(err); toast("La base partagée ne répond pas. Vérifier la connexion."); };
+  return {
+    shared: true,
+    async loadConfig() {
+      const snap = await fs.getDoc(root);
+      return snap.exists() ? snap.data().config || null : null;
+    },
+    watchConfig(fn) {
+      fs.onSnapshot(root, (snap) => fn(snap.exists() ? snap.data().config || null : null), fail);
+    },
+    saveConfig(config) { return fs.setDoc(root, { config, updatedAt: now() }).catch(fail); },
+    watch(name, fn) {
+      fs.onSnapshot(col(name), (qs) => fn(qs.docs.map((d) => ({ ...d.data(), id: d.id }))), fail);
+    },
+    set(name, id, data) { return fs.setDoc(fs.doc(col(name), id), data).catch(fail); },
+    async add(name, data) {
+      try { return (await fs.addDoc(col(name), data)).id; } catch (err) { fail(err); return null; }
+    },
+    update(name, id, patch) { return fs.updateDoc(fs.doc(col(name), id), patch).catch(fail); },
+    remove(name, id) { return fs.deleteDoc(fs.doc(col(name), id)).catch(fail); },
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. ÉTAT DE L'ATELIER
+   ══════════════════════════════════════════════════════════════════════ */
+let store = null;
+let config = null;
+let me = null; // identifiant de la personne qui répond sur cet appareil
+const data = { curseurs: [], ton: [], archetypes: [], points: [], phrases: [] };
+const ME_KEY = `${LOCAL_PREFIX}${ATELIER}:moi`;
+
+function normalizeConfig(c) {
+  const d = defaultConfig();
+  const out = c && typeof c === "object" ? c : d;
+  if (typeof out.projectName !== "string") out.projectName = d.projectName;
+  if (!Array.isArray(out.participants)) out.participants = d.participants;
+  if (!Array.isArray(out.sliderGroups)) out.sliderGroups = d.sliderGroups;
+  out.sliderGroups.forEach((g) => { if (!Array.isArray(g.axes)) g.axes = []; });
+  if (!Array.isArray(out.toneAxes)) out.toneAxes = d.toneAxes;
+  if (!out.map || !Array.isArray(out.map.poles) || out.map.poles.length < MIN_POLES) out.map = d.map;
+  return out;
+}
+
+const participant = (id) => (config ? config.participants.find((p) => p.id === id) : null) || null;
+const colorOf = (id) => (participant(id) || {}).color || "#8a8a8a";
+const nameOf = (id, fallback) => (participant(id) || {}).name || fallback || "Ancien·ne participant·e";
+const projectName = () => (config && config.projectName.trim()) || "le projet";
+
+function updateConfig(mutate) {
+  const next = clone(config);
+  mutate(next);
+  config = next;
+  renderAll();
+  store.saveConfig(next);
+}
+
+function setMe(id) {
+  me = participant(id) ? id : null;
+  safeStorage.set(ME_KEY, me || "");
+  renderIdentity();
+  modules.forEach((m) => m.onIdentity && m.onIdentity());
+}
+
+function requireMe() {
+  if (me && participant(me)) return true;
+  const list = $("#qui-liste");
+  list.classList.add("shake");
+  setTimeout(() => list.classList.remove("shake"), 500);
+  list.scrollIntoView({ block: "center", behavior: "smooth" });
+  toast("Indiquer d'abord qui répond, en haut de page.");
+  return false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   6. EN-TÊTE : projet, participant·es, navigation
+   ══════════════════════════════════════════════════════════════════════ */
+function renderIdentity() {
+  if (me && !participant(me)) me = null;
+  document.documentElement.style.setProperty("--moi", me ? colorOf(me) : "#111111");
+  setText($("#titre-projet"), config.projectName.trim() || "Votre projet");
+  document.title = `${config.projectName.trim() || "Projet"} — Outil de positionnement ORMA`;
+  $$(".nom-projet").forEach((el) => setText(el, projectName()));
+  syncList(
+    $("#qui-liste"),
+    config.participants,
+    (p) => p.id,
+    (p) => h("button", { type: "button", class: "chip", onclick: () => setMe(me === p.id ? null : p.id) }, h("i", { class: "dot" }), h("span")),
+    (el, p) => {
+      el.firstChild.style.background = p.color;
+      setText(el.lastChild, p.name);
+      el.setAttribute("aria-pressed", String(p.id === me));
+    }
+  );
+}
+
+function activate(id, scroll) {
+  const target = document.getElementById(id) ? id : "module-1";
+  $$("#nav button").forEach((b) => {
+    if (b.dataset.target === target) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+  $$(".module").forEach((sec) => (sec.hidden = sec.id !== target));
+  if (scroll) window.scrollTo(0, 0);
+  window.dispatchEvent(new CustomEvent("module-actif", { detail: target }));
+}
+
+function initNav() {
+  $$("#nav button").forEach((b) =>
+    b.addEventListener("click", () => {
+      try { history.replaceState(null, "", "#" + b.dataset.target); } catch (e) { /* aperçu sans historique */ }
+      activate(b.dataset.target, false);
+    })
+  );
+  $("#qui-modifier").addEventListener("click", () => {
+    activate("reglages", false);
+    $("#rg-participants").scrollIntoView({ block: "center" });
+  });
+  window.addEventListener("hashchange", () => activate(location.hash.slice(1), false));
+  activate(location.hash.slice(1) || "module-1", false);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   7. RADAR
+   axes : [{id, a, b}]   series : [{id, label, color, values}]
+   ══════════════════════════════════════════════════════════════════════ */
+function polar(cx, cy, r, deg) {
+  const rad = (deg * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+const valueOf = (values, axisId) => {
+  const v = values ? values[axisId] : undefined;
+  return typeof v === "number" ? Math.max(0, Math.min(100, v)) : 50;
+};
+
+function renderRadar(container, axes, series, label) {
+  const size = 380, pad = 30, R = size / 2 - pad, c = size / 2;
+  const step = 360 / axes.length;
+  const svg = s("svg", { viewBox: `0 0 ${size} ${size}`, width: "100%", height: "100%", role: "img", "aria-label": label });
+
+  [0.25, 0.5, 0.75, 1].forEach((f) => {
+    const pts = axes.map((_, i) => polar(c, c, R * f, -90 + i * step)).map((p) => `${p.x},${p.y}`).join(" ");
+    svg.append(s("polygon", { points: pts, class: "radar-anneau" }));
+  });
+  axes.forEach((_, i) => {
+    const out = polar(c, c, R, -90 + i * step);
+    svg.append(s("line", { x1: c, y1: c, x2: out.x, y2: out.y, class: "radar-rayon" }));
+    const lab = polar(c, c, R + 15, -90 + i * step);
+    svg.append(s("text", { x: lab.x, y: lab.y, class: "radar-index", "text-anchor": "middle", "dominant-baseline": "middle" }, i + 1));
+  });
+  series.forEach((serie) => {
+    const pts = axes.map((axis, i) => polar(c, c, R * (valueOf(serie.values, axis.id) / 100), -90 + i * step));
+    const g = s("g", { class: "serie", "data-pid": serie.id || "" });
+    g.append(s("polygon", {
+      points: pts.map((p) => `${p.x},${p.y}`).join(" "),
+      fill: serie.color, "fill-opacity": series.length > 1 ? 0.07 : 0.14,
+      stroke: serie.color, "stroke-width": 2, "stroke-linejoin": "round",
+    }));
+    pts.forEach((p, i) => {
+      g.append(s("circle", { cx: p.x, cy: p.y, r: 4.5, fill: serie.color, stroke: "#ffffff", "stroke-width": 1.5 },
+        s("title", null, `${serie.label} — ${axes[i].a} ↔ ${axes[i].b}`)));
+    });
+    svg.append(g);
+  });
+  container.replaceChildren(svg);
+}
+
+function renderRadarLegend(container, axes) {
+  syncList(container, axes, (a) => a.id,
+    () => h("li", null, h("span"), h("span")),
+    (el, axis, i) => {
+      setText(el.firstChild, String(i + 1));
+      setText(el.lastChild, `${axis.a} ↔ ${axis.b}`);
+    });
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   8. MODULES À CURSEURS (positionnement, ton de voix)
+   ══════════════════════════════════════════════════════════════════════ */
+function tendance(axis, v) {
+  if (v < 40) return `plutôt « ${axis.a} »`;
+  if (v > 60) return `plutôt « ${axis.b} »`;
+  return `entre « ${axis.a} » et « ${axis.b} »`;
+}
+
+function createSliderModule({ rootId, col, groups, savedMessage, emptyMessage, radarLabel }) {
+  const root = document.getElementById(rootId);
+  const groupsEl = $(".groupes", root);
+  const legendEl = $(".legende-equipe", root);
+  const saveBar = $(".barre-enregistrer", root);
+  const stateEl = $(".etat-saisie", root);
+  let mode = "mine";
+  let draft = { values: {}, comments: {} };
+  let draftOwner;
+  let dirty = false;
+
+  const answers = () => data[col].filter((d) => participant(d.id));
+
+  function syncDraft(force) {
+    if (!force && dirty && draftOwner === me) return;
+    const mine = data[col].find((d) => d.id === me);
+    draft = { values: { ...((mine && mine.values) || {}) }, comments: { ...((mine && mine.comments) || {}) } };
+    draftOwner = me;
+    dirty = false;
+  }
+
+  function markDirty() {
+    dirty = true;
+    setText(stateEl, "Modifications non enregistrées.");
+  }
+
+  function series() {
+    if (mode === "mine") return [{ id: me || "", label: me ? nameOf(me) : "Vous", color: me ? colorOf(me) : "#111111", values: draft.values }];
+    return answers().map((d) => ({ id: d.id, label: nameOf(d.id), color: colorOf(d.id), values: d.values || {} }));
+  }
+
+  function drawRadars() {
+    const all = series();
+    groups().forEach((g) => {
+      const block = groupsEl.querySelector(`[data-key="${g.id}"]`);
+      if (!block) return;
+      const radar = $(".radar", block), legend = $(".radar-legende", block), note = $(".radar-note", block);
+      const enough = g.axes.length >= 3;
+      radar.hidden = legend.hidden = !enough;
+      note.hidden = enough;
+      if (!enough) return;
+      renderRadar(radar, g.axes, all, `${radarLabel}${g.title ? " — " + g.title : ""}`);
+      renderRadarLegend(legend, g.axes);
+    });
+  }
+
+  function createSlider(axis) {
+    const id = axis.id;
+    const range = h("input", { type: "range", class: "glissiere", min: "0", max: "100", step: "1" });
+    const comment = h("input", { type: "text", class: "champ", maxlength: "160", placeholder: "Votre commentaire (facultatif)" });
+    range.addEventListener("input", () => {
+      draft.values[id] = Number(range.value);
+      const current = groups().flatMap((g) => g.axes).find((a) => a.id === id);
+      if (current) range.setAttribute("aria-valuetext", tendance(current, draft.values[id]));
+      markDirty();
+      drawRadars();
+    });
+    comment.addEventListener("input", () => {
+      draft.comments[id] = comment.value;
+      markDirty();
+    });
+    return h("div", { class: "curseur" },
+      h("div", { class: "poles" }, h("span"), h("span")),
+      h("p", { class: "curseur-note" }),
+      range,
+      comment);
+  }
+
+  function updateSlider(el, axis) {
+    const [a, b] = $(".poles", el).children;
+    setText(a, axis.a);
+    setText(b, axis.b);
+    const note = $(".curseur-note", el);
+    setText(note, axis.note || "");
+    note.hidden = !axis.note;
+    const range = $(".glissiere", el), comment = $(".champ", el);
+    const v = valueOf(draft.values, axis.id);
+    range.setAttribute("aria-label", `${axis.a} ↔ ${axis.b}`);
+    range.setAttribute("aria-valuetext", tendance(axis, v));
+    comment.setAttribute("aria-label", `Commentaire sur ${axis.a} ↔ ${axis.b}`);
+    if (document.activeElement !== range) range.value = String(v);
+    setValue(comment, draft.comments[axis.id] || "");
+  }
+
+  function createStrip() {
+    return h("div", { class: "strip" },
+      h("div", { class: "poles" }, h("span"), h("span")),
+      h("p", { class: "curseur-note" }),
+      h("div", { class: "strip-piste" }),
+      h("ul", { class: "strip-comments" }));
+  }
+
+  function updateStrip(el, axis) {
+    const [a, b] = $(".poles", el).children;
+    setText(a, axis.a);
+    setText(b, axis.b);
+    const note = $(".curseur-note", el);
+    setText(note, axis.note || "");
+    note.hidden = !axis.note;
+
+    const list = answers().map((d) => ({ id: d.id, v: valueOf(d.values, axis.id), comment: ((d.comments || {})[axis.id] || "").trim() }));
+    // Les points trop proches s'empilent au lieu de se recouvrir.
+    const placed = [];
+    let maxLevel = 0;
+    const track = $(".strip-piste", el);
+    track.replaceChildren(...[...list].sort((x, y) => x.v - y.v).map((d) => {
+      let level = 0;
+      while (placed.some((p) => p.level === level && Math.abs(p.v - d.v) < 4)) level++;
+      placed.push({ v: d.v, level });
+      maxLevel = Math.max(maxLevel, level);
+      const dot = h("span", { class: "strip-point", "data-pid": d.id, title: `${nameOf(d.id)} — ${tendance(axis, d.v)}` });
+      dot.style.left = d.v + "%";
+      dot.style.bottom = 3 + level * 12 + "px";
+      dot.style.background = colorOf(d.id);
+      return dot;
+    }));
+    track.style.height = 24 + maxLevel * 12 + "px";
+
+    const comments = $(".strip-comments", el);
+    comments.replaceChildren(...list.filter((d) => d.comment).map((d) => {
+      const dot = h("i", { class: "dot" });
+      dot.style.background = colorOf(d.id);
+      return h("li", { "data-pid": d.id }, dot, h("span", null, h("b", { text: nameOf(d.id) }), d.comment));
+    }));
+    comments.hidden = !comments.children.length;
+  }
+
+  function focusOn(pid) {
+    $$(".serie, .strip-point, .strip-comments li", root).forEach((el) => el.classList.toggle("dim", !!pid && el.dataset.pid !== pid));
+  }
+
+  function render() {
+    $$(".vues .btn", root).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.vue === mode)));
+    saveBar.hidden = mode !== "mine";
+    legendEl.hidden = mode !== "team";
+
+    if (mode === "team") {
+      const list = answers();
+      if (!list.length) legendEl.replaceChildren(h("p", { class: "vide", text: emptyMessage }));
+      else {
+        legendEl.replaceChildren(...list.map((d) => {
+          const dot = h("i", { class: "dot" });
+          dot.style.background = colorOf(d.id);
+          const chip = h("span", { class: "chip", tabindex: "0" }, dot, nameOf(d.id));
+          chip.addEventListener("mouseenter", () => focusOn(d.id));
+          chip.addEventListener("mouseleave", () => focusOn(null));
+          chip.addEventListener("focus", () => focusOn(d.id));
+          chip.addEventListener("blur", () => focusOn(null));
+          return chip;
+        }));
+      }
+    }
+
+    const visible = groups().filter((g) => g.axes.length);
+    syncList(groupsEl, visible, (g) => g.id,
+      () => h("div", { class: "bloc" },
+        h("h3"),
+        h("div", { class: "split" },
+          h("div", null, h("div", { class: "curseurs" }), h("div", { class: "strips" })),
+          h("div", { class: "col-radar" },
+            h("div", { class: "radar" }),
+            h("ol", { class: "radar-legende" }),
+            h("p", { class: "vide radar-note", text: "Le radar s'affiche à partir de trois curseurs." })))),
+      (el, g) => {
+        const title = $("h3", el);
+        setText(title, g.title || "");
+        title.hidden = !g.title;
+        const sliders = $(".curseurs", el), strips = $(".strips", el);
+        sliders.hidden = mode !== "mine";
+        strips.hidden = mode !== "team";
+        if (mode === "mine") syncList(sliders, g.axes, (a) => a.id, createSlider, updateSlider);
+        else syncList(strips, g.axes, (a) => a.id, createStrip, updateStrip);
+      });
+    drawRadars();
+  }
+
+  async function save() {
+    if (!requireMe()) return;
+    const ids = new Set(groups().flatMap((g) => g.axes.map((a) => a.id)));
+    const values = {}, comments = {};
+    ids.forEach((id) => {
+      values[id] = valueOf(draft.values, id);
+      const c = (draft.comments[id] || "").trim();
+      if (c) comments[id] = c;
+    });
+    dirty = false;
+    await store.set(col, me, { values, comments, updatedAt: now() });
+    setText(stateEl, `Enregistré à ${new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}.`);
+    toast(savedMessage);
+  }
+
+  $$(".vues .btn", root).forEach((b) => b.addEventListener("click", () => { mode = b.dataset.vue; render(); }));
+  $('[data-action="save"]', root).addEventListener("click", save);
+
+  return {
+    render,
+    onData() { syncDraft(false); render(); },
+    onIdentity() { syncDraft(true); setText(stateEl, ""); render(); },
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   9. CARTE DE POSITIONNEMENT
+   Un polygone régulier, un pôle par sommet. Chaque point est enregistré
+   comme un dosage entre les pôles, pas comme une position à l'écran.
+   ══════════════════════════════════════════════════════════════════════ */
+function polygonFor(n) {
+  const R = { 3: 46, 4: 50, 5: 36, 6: 36 }[n] || 36, start = n === 4 ? -135 : -90;
+  const V = Array.from({ length: n }, (_, i) => polar(50, 50, R, start + (i * 360) / n));
+  const ys = V.map((v) => v.y);
+  const dy = 50 - (Math.min(...ys) + Math.max(...ys)) / 2;
+  V.forEach((v) => (v.y += dy));
+  return V;
+}
+const centroid = (V) => ({ x: V.reduce((t, v) => t + v.x, 0) / V.length, y: V.reduce((t, v) => t + v.y, 0) / V.length });
+const area2 = (a, b, c) => (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+
+function isInside(p, V) {
+  const sign = Math.sign(area2(V[0], V[1], V[2]));
+  return V.every((v, i) => sign * area2(v, V[(i + 1) % V.length], p) > 1e-6);
+}
+
+function clampInside(p, V) {
+  if (isInside(p, V)) return p;
+  const c = centroid(V);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (isInside({ x: c.x + mid * (p.x - c.x), y: c.y + mid * (p.y - c.y) }, V)) lo = mid;
+    else hi = mid;
+  }
+  const t = lo * 0.995;
+  return { x: c.x + t * (p.x - c.x), y: c.y + t * (p.y - c.y) };
+}
+
+// Coordonnées de Wachspress : pour un triangle, ce sont les coordonnées
+// barycentriques habituelles ; elles se prolongent aux polygones à 4, 5, 6 côtés.
+function weightsAt(p, V) {
+  const n = V.length;
+  const w = V.map((v, i) => {
+    const prev = V[(i - 1 + n) % n], next = V[(i + 1) % n];
+    return area2(prev, v, next) / (area2(prev, v, p) * area2(v, next, p));
+  });
+  const sum = w.reduce((t, x) => t + x, 0);
+  return w.map((x) => Math.max(0, x / sum));
+}
+
+function positionFrom(weights, poles, V) {
+  let x = 0, y = 0, sum = 0;
+  poles.forEach((pole, i) => {
+    const w = Number((weights || {})[pole.id]) || 0;
+    x += w * V[i].x;
+    y += w * V[i].y;
+    sum += w;
+  });
+  return sum > 0 ? { x: x / sum, y: y / sum } : centroid(V);
+}
+
+function createMapModule() {
+  const mapEl = $("#m2-carte"), listEl = $("#m2-liste"), polesEl = $("#m2-poles"), nameInput = $("#m2-nom");
+  let active = null;
+
+  const sorted = () => [...data.points].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+
+  function renderPoles() {
+    const poles = config.map.poles;
+    const items = [...poles, ...(poles.length < MAX_POLES ? [{ id: "+", add: true }] : [])];
+    syncList(polesEl, items, (p) => p.id,
+      (p) => {
+        if (p.add) {
+          return h("li", null, h("button", {
+            type: "button", class: "btn-texte", text: "Ajouter un pôle",
+            onclick: () => updateConfig((c) => {
+              if (c.map.poles.length < MAX_POLES) c.map.poles.push({ id: uid(), label: `Pôle ${c.map.poles.length + 1}` });
+            }),
+          }));
+        }
+        const input = h("input", { type: "text", class: "champ", maxlength: "32" });
+        input.addEventListener("change", () => {
+          const v = input.value.trim();
+          if (!v) { input.value = (config.map.poles.find((x) => x.id === p.id) || {}).label || ""; return; }
+          updateConfig((c) => { const pole = c.map.poles.find((x) => x.id === p.id); if (pole) pole.label = v; });
+        });
+        const remove = h("button", {
+          type: "button", class: "btn-x", text: "×",
+          onclick: () => updateConfig((c) => {
+            if (c.map.poles.length > MIN_POLES) c.map.poles = c.map.poles.filter((x) => x.id !== p.id);
+          }),
+        });
+        return h("li", null, input, remove);
+      },
+      (el, p, i) => {
+        if (p.add) return;
+        const input = $("input", el), remove = $(".btn-x", el);
+        setValue(input, p.label);
+        input.setAttribute("aria-label", `Pôle ${i + 1}`);
+        remove.setAttribute("aria-label", `Retirer le pôle ${p.label}`);
+        remove.hidden = poles.length <= MIN_POLES;
+      });
+  }
+
+  function renderMap() {
+    const poles = config.map.poles;
+    const V = polygonFor(poles.length);
+    const c = centroid(V);
+    const scaled = (k) => V.map((v) => `${c.x + k * (v.x - c.x)},${c.y + k * (v.y - c.y)}`).join(" ");
+
+    const svg = s("svg", { viewBox: "0 0 100 100", "aria-hidden": "true" });
+    svg.append(s("polygon", { points: scaled(1), class: "carte-contour" }));
+    [1 / 3, 2 / 3].forEach((k) => svg.append(s("polygon", { points: scaled(k), class: "carte-treillis" })));
+    V.forEach((v) => svg.append(s("line", { x1: c.x, y1: c.y, x2: v.x, y2: v.y, class: "carte-treillis" })));
+
+    const top = Math.min(...V.map((v) => v.y)), bottom = Math.max(...V.map((v) => v.y));
+    const labels = poles.map((pole, i) => {
+      const v = V[i], dx = v.x - c.x, dy = v.y - c.y;
+      const el = h("div", { class: "carte-pole", text: pole.label });
+      // Sommets du haut et du bas : libellé au-dessus ou en dessous, calé vers
+      // l'intérieur près des bords. Sommets latéraux : libellé à l'extérieur.
+      const extreme = Math.abs(v.y - top) < 1 || Math.abs(v.y - bottom) < 1;
+      if (extreme) {
+        const shiftX = dx > 12 ? "-82%" : dx < -12 ? "-18%" : "-50%";
+        el.style.left = v.x + "%";
+        el.style.textAlign = dx > 12 ? "right" : dx < -12 ? "left" : "center";
+        if (dy < 0) { el.style.top = v.y - 2 + "%"; el.style.transform = `translate(${shiftX}, -100%)`; }
+        else { el.style.top = v.y + 2 + "%"; el.style.transform = `translate(${shiftX}, 0)`; }
+      } else if (dx > 0) {
+        el.style.left = v.x + 2 + "%"; el.style.top = v.y + "%";
+        el.style.maxWidth = 100 - v.x - 3 + "%";
+        el.style.textAlign = "left"; el.style.transform = "translate(0, -50%)";
+      } else {
+        el.style.left = v.x - 2 + "%"; el.style.top = v.y + "%";
+        el.style.maxWidth = v.x - 3 + "%";
+        el.style.textAlign = "right"; el.style.transform = "translate(-100%, -50%)";
+      }
+      return el;
+    });
+
+    const dots = sorted().map((p) => {
+      const pos = positionFrom(p.weights, poles, V);
+      const dot = h("i");
+      dot.style.background = colorOf(p.by);
+      const btn = h("button", {
+        type: "button",
+        class: "carte-point" + (p.id === active ? " actif" : ""),
+        "aria-label": `${p.name} — voir dans la liste`,
+        onclick: (e) => { e.stopPropagation(); select(p.id, true); },
+      }, dot, h("span", { text: p.name }));
+      btn.style.left = pos.x + "%";
+      btn.style.top = pos.y + "%";
+      return btn;
+    });
+
+    mapEl.replaceChildren(svg, ...labels, ...dots);
+  }
+
+  function select(id, reveal) {
+    active = active === id && !reveal ? null : id;
+    renderMap();
+    renderList();
+    if (reveal) {
+      const row = listEl.querySelector(`[data-key="${id}"]`);
+      if (row) row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  function createRow(p) {
+    const id = p.id;
+    const current = () => data.points.find((x) => x.id === id) || {};
+    const name = h("input", { type: "text", class: "champ", maxlength: "60", "aria-label": "Nom du point" });
+    const url = h("input", { type: "url", class: "champ", inputmode: "url", placeholder: "Coller l'adresse du site", "aria-label": "Adresse du site" });
+    const link = h("a", { target: "_blank", rel: "noopener noreferrer", text: "Ouvrir le site ↗" });
+    const comment = h("input", { type: "text", class: "champ", maxlength: "140", placeholder: "Commentaire court", "aria-label": "Commentaire" });
+
+    name.addEventListener("change", () => {
+      const v = name.value.trim();
+      if (!v) { name.value = current().name || ""; return; }
+      store.update("points", id, { name: v });
+    });
+    url.addEventListener("change", () => {
+      const v = normalizeUrl(url.value);
+      if (v === null) { toast("Adresse non reconnue. Exemple : https://exemple.fr"); return; }
+      url.value = v;
+      store.update("points", id, { url: v });
+    });
+    comment.addEventListener("change", () => store.update("points", id, { comment: comment.value.trim() }));
+
+    const row = h("li", { class: "point-row" },
+      h("div", { class: "point-tete" }, h("i", { class: "dot" }), name, h("span", { class: "point-par" })),
+      h("div", { class: "point-url" }, url, link),
+      comment,
+      h("div", { class: "point-pied" }, confirmButton("Retirer ce point", () => {
+        if (active === id) active = null;
+        store.remove("points", id);
+      })));
+    row.addEventListener("focusin", () => { if (active !== id) { active = id; renderMap(); markRows(); } });
+    row.addEventListener("mouseenter", () => { if (active !== id) { active = id; renderMap(); markRows(); } });
+    return row;
+  }
+
+  function markRows() {
+    [...listEl.children].forEach((el) => el.classList.toggle("actif", el.dataset.key === active));
+  }
+
+  function renderList() {
+    const points = sorted();
+    $("#m2-vide").hidden = points.length > 0;
+    syncList(listEl, points, (p) => p.id, createRow, (el, p) => {
+      $(".dot", el).style.background = colorOf(p.by);
+      const [name, url, comment] = $$("input", el);
+      setValue(name, p.name || "");
+      setValue(url, p.url || "");
+      setValue(comment, p.comment || "");
+      setText($(".point-par", el), p.by || p.byName ? `placé par ${nameOf(p.by, p.byName)}` : "");
+      const link = $("a", el), href = normalizeUrl(p.url);
+      link.hidden = !href;
+      if (href) link.href = href; else link.removeAttribute("href");
+    });
+    markRows();
+  }
+
+  async function onMapClick(e) {
+    const name = nameInput.value.trim();
+    if (!name) {
+      toast("Donner d'abord un nom au point.");
+      nameInput.focus();
+      return;
+    }
+    const poles = config.map.poles, V = polygonFor(poles.length);
+    const rect = mapEl.getBoundingClientRect();
+    const p = clampInside({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 }, V);
+    const w = weightsAt(p, V);
+    const weights = {};
+    poles.forEach((pole, i) => (weights[pole.id] = Math.round(w[i] * 10000) / 10000));
+    nameInput.value = "";
+    const id = await store.add("points", {
+      name, weights, url: "", comment: "",
+      by: me || null, byName: me ? nameOf(me) : null, createdAt: now(),
+    });
+    // Le nouveau point est repéré dans la liste, sans faire défiler la page :
+    // on peut enchaîner plusieurs placements sans quitter la carte des yeux.
+    if (id) { active = id; renderMap(); renderList(); }
+  }
+
+  mapEl.addEventListener("click", onMapClick);
+
+  return {
+    render() { renderPoles(); renderMap(); renderList(); },
+    onData() { if (active && !data.points.some((p) => p.id === active)) active = null; renderMap(); renderList(); },
+    onIdentity() {},
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   10. BRAND KEY : une liste de phrases signées par champ
+   ══════════════════════════════════════════════════════════════════════ */
+function createBrandKeyModule() {
+  const container = $("#m3-champs");
+  const drafts = {};
+  let editing = null;
+
+  function createPhrase(ph) {
+    const id = ph.id;
+    const current = () => data.phrases.find((x) => x.id === id) || {};
+    const text = h("p", { class: "bk-texte" });
+    const edit = h("textarea", { class: "champ", rows: "2", maxlength: "600", "aria-label": "Modifier la phrase", hidden: true });
+    const saveBtn = h("button", { type: "button", class: "btn-texte", text: "Enregistrer", hidden: true });
+    const cancelBtn = h("button", { type: "button", class: "btn-texte", text: "Annuler", hidden: true });
+    const editBtn = h("button", { type: "button", class: "btn-texte", text: "Modifier" });
+    const removeBtn = confirmButton("Retirer", () => store.remove("phrases", id));
+
+    editBtn.addEventListener("click", () => {
+      editing = id;
+      edit.value = current().text || "";
+      render();
+      edit.focus();
+    });
+    cancelBtn.addEventListener("click", () => { editing = null; render(); });
+    saveBtn.addEventListener("click", () => {
+      const v = edit.value.trim();
+      if (!v) return;
+      editing = null;
+      store.update("phrases", id, { text: v, updatedAt: now() });
+      render();
+    });
+
+    const el = h("li", { class: "bk-phrase" }, text, edit,
+      h("div", { class: "bk-meta" },
+        h("span", { class: "bk-auteur" }, h("i", { class: "dot" }), h("span")),
+        h("span", { class: "bk-date" }),
+        editBtn, saveBtn, cancelBtn, removeBtn));
+    el._parts = { text, edit, saveBtn, cancelBtn, editBtn, removeBtn };
+    return el;
+  }
+
+  function updatePhrase(el, ph) {
+    const { text, edit, saveBtn, cancelBtn, editBtn, removeBtn } = el._parts;
+    const color = colorOf(ph.by);
+    el.style.borderLeftColor = color;
+    $(".dot", el).style.background = color;
+    setText($(".bk-auteur span", el), nameOf(ph.by, ph.byName));
+    setText($(".bk-date", el), formatTime(ph.createdAt) + (ph.updatedAt ? " (modifiée)" : ""));
+    setText(text, ph.text || "");
+    const mine = !!me && ph.by === me;
+    const isEditing = mine && editing === ph.id;
+    text.hidden = isEditing;
+    edit.hidden = saveBtn.hidden = cancelBtn.hidden = !isEditing;
+    editBtn.hidden = !mine || isEditing;
+    removeBtn.hidden = !mine || isEditing;
+  }
+
+  function createField(field) {
+    const input = h("textarea", { class: "champ", rows: "2", maxlength: "600", "aria-label": `Ajouter une phrase : ${field.label}` });
+    input.addEventListener("input", () => (drafts[field.id] = input.value));
+    const add = h("button", { type: "button", class: "btn", text: "Ajouter ma phrase" });
+    add.addEventListener("click", async () => {
+      const v = input.value.trim();
+      if (!v) { input.focus(); return; }
+      if (!requireMe()) return;
+      input.value = "";
+      drafts[field.id] = "";
+      await store.add("phrases", { field: field.id, text: v, by: me, byName: nameOf(me), createdAt: now() });
+    });
+    return h("div", { class: "bk-champ" },
+      h("h3", { text: field.label }),
+      h("p", { class: "bk-question", text: field.question }),
+      h("ul", { class: "bk-phrases" }),
+      h("div", { class: "bk-ajout" }, input, add));
+  }
+
+  function render() {
+    syncList(container, BRAND_KEY, (f) => f.id, createField, (el, field) => {
+      const phrases = data.phrases
+        .filter((p) => p.field === field.id)
+        .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+      const list = $(".bk-phrases", el);
+      list.hidden = !phrases.length;
+      syncList(list, phrases, (p) => p.id, createPhrase, updatePhrase);
+      const input = $(".bk-ajout textarea", el);
+      input.placeholder = me ? `Votre phrase, signée ${nameOf(me)}` : "Votre phrase";
+      setValue(input, drafts[field.id] || "");
+    });
+  }
+
+  return { render, onData: render, onIdentity() { editing = null; render(); } };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   11. ROUE DES ARCHÉTYPES
+   ══════════════════════════════════════════════════════════════════════ */
+function createArchetypeModule() {
+  const root = $("#module-4"), wheel = $("#m4-roue"), stateEl = $("#m4-etat");
+  let mode = "mine";
+  let selected = [];
+  let owner;
+  let dirty = false;
+
+  function syncDraft(force) {
+    if (!force && dirty && owner === me) return;
+    const mine = data.archetypes.find((d) => d.id === me);
+    selected = mine && Array.isArray(mine.archetypes) ? [...mine.archetypes] : [];
+    owner = me;
+    dirty = false;
+  }
+
+  function layout() {
+    const radius = Math.max(60, wheel.clientWidth / 2 - (wheel.clientWidth < 400 ? 42 : 58));
+    $$(".roue-item", wheel).forEach((el) => el.style.setProperty("--rayon", radius + "px"));
+  }
+
+  function toggle(id) {
+    if (selected.includes(id)) selected = selected.filter((x) => x !== id);
+    else if (selected.length >= 2) { toast("Deux archétypes au maximum : en retirer un d'abord."); return; }
+    else selected.push(id);
+    dirty = true;
+    setText(stateEl, "Modifications non enregistrées.");
+    render();
+  }
+
+  function build() {
+    wheel.append(h("div", { class: "roue-centre" }, h("b", { style: "font-weight:500" }), h("span", { text: "un ou deux archétypes" })));
+    ARCHETYPES.forEach((a, i) => {
+      const btn = h("button", { type: "button", class: "roue-item", text: a.label, "data-id": a.id, onclick: () => toggle(a.id) });
+      btn.style.setProperty("--angle", (360 / ARCHETYPES.length) * i - 90 + "deg");
+      wheel.append(btn);
+    });
+    $("#m4-definitions").append(...ARCHETYPES.map((a) => h("div", null, h("dt", { text: a.label }), h("dd", { text: a.def }))));
+  }
+
+  function renderTeam() {
+    const votes = data.archetypes.filter((d) => participant(d.id) && (d.archetypes || []).length);
+    $("#m4-team-vide").hidden = votes.length > 0;
+    const ranked = ARCHETYPES
+      .map((a, i) => ({ ...a, i, voters: votes.filter((d) => d.archetypes.includes(a.id)).map((d) => d.id) }))
+      .sort((x, y) => y.voters.length - x.voters.length || x.i - y.i);
+    syncList($("#m4-classement"), votes.length ? ranked : [], (a) => a.id,
+      () => h("div", { class: "rang" }, h("span", { class: "rang-nom" }), h("span", { class: "rang-votes" })),
+      (el, a) => {
+        el.classList.toggle("sans-vote", !a.voters.length);
+        setText($(".rang-nom", el), a.label);
+        $(".rang-votes", el).replaceChildren(...a.voters.map((pid) => {
+          const dot = h("i", { class: "dot" });
+          dot.style.background = colorOf(pid);
+          return h("span", { class: "chip" }, dot, nameOf(pid));
+        }));
+      });
+  }
+
+  function render() {
+    $$(".vues .btn", root).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.vue === mode)));
+    $("#m4-mine").hidden = mode !== "mine";
+    $("#m4-team").hidden = mode !== "team";
+    setText($(".roue-centre b", wheel), config.projectName.trim() || "Votre projet");
+    $$(".roue-item", wheel).forEach((el) => el.setAttribute("aria-pressed", String(selected.includes(el.dataset.id))));
+    const labels = selected.map((id) => (ARCHETYPES.find((a) => a.id === id) || {}).label).filter(Boolean);
+    setText($("#m4-choix"), labels.length ? `Votre choix : ${labels.join(" et ")}.` : "Aucun archétype choisi pour l'instant.");
+    if (mode === "team") renderTeam();
+    else layout();
+  }
+
+  async function save() {
+    if (!requireMe()) return;
+    dirty = false;
+    await store.set("archetypes", me, { archetypes: selected, updatedAt: now() });
+    setText(stateEl, `Enregistré à ${new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}.`);
+    toast("Archétypes enregistrés.");
+  }
+
+  build();
+  $$(".vues .btn", root).forEach((b) => b.addEventListener("click", () => { mode = b.dataset.vue; render(); }));
+  $("#m4-save").addEventListener("click", save);
+  window.addEventListener("resize", layout);
+  window.addEventListener("module-actif", (e) => { if (e.detail === "module-4") requestAnimationFrame(layout); });
+
+  return {
+    render,
+    onData() { syncDraft(false); render(); },
+    onIdentity() { syncDraft(true); setText(stateEl, ""); render(); },
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   12. RÉGLAGES DE L'ATELIER
+   ══════════════════════════════════════════════════════════════════════ */
+function createSettingsModule() {
+  let paletteFor = null;
+
+  function findAxis(c, id) {
+    for (const list of [...c.sliderGroups.map((g) => g.axes), c.toneAxes]) {
+      const index = list.findIndex((a) => a.id === id);
+      if (index >= 0) return { list, index, axis: list[index] };
+    }
+    return null;
+  }
+
+  function focusNew(listEl, id) {
+    const row = listEl.querySelector(`[data-key="${id}"]`);
+    const input = row && $("input", row);
+    if (input) { input.focus(); input.select(); }
+  }
+
+  /* — participant·es — */
+  function createParticipant(p) {
+    const id = p.id;
+    const swatch = h("button", { type: "button", class: "pastille", onclick: () => { paletteFor = paletteFor === id ? null : id; render(); } });
+    const name = h("input", { type: "text", class: "champ", maxlength: "30", "aria-label": "Prénom" });
+    name.addEventListener("change", () => {
+      const v = name.value.trim();
+      if (!v) { name.value = nameOf(id); return; }
+      updateConfig((c) => { const x = c.participants.find((q) => q.id === id); if (x) x.name = v; });
+    });
+    const remove = confirmButton("Retirer", () => {
+      if (config.participants.length <= 1) { toast("Il faut au moins une personne dans l'atelier."); return; }
+      updateConfig((c) => (c.participants = c.participants.filter((q) => q.id !== id)));
+    });
+    const palette = h("div", { class: "nuancier", role: "group", "aria-label": "Choisir une couleur", hidden: true },
+      PALETTE.map((col) => {
+        const b = h("button", { type: "button", "data-hex": col.hex, "aria-label": col.nom, title: col.nom });
+        b.style.background = col.hex;
+        b.addEventListener("click", () => {
+          paletteFor = null;
+          updateConfig((c) => { const x = c.participants.find((q) => q.id === id); if (x) x.color = col.hex; });
+        });
+        return b;
+      }));
+    return h("li", { class: "participant-row" }, swatch, name, remove, palette);
+  }
+
+  function updateParticipant(el, p) {
+    const swatch = $(".pastille", el), palette = $(".nuancier", el);
+    swatch.style.background = p.color;
+    swatch.setAttribute("aria-label", `Changer la couleur de ${p.name}`);
+    swatch.setAttribute("aria-expanded", String(paletteFor === p.id));
+    setValue($("input", el), p.name);
+    palette.hidden = paletteFor !== p.id;
+    const taken = new Set(config.participants.filter((q) => q.id !== p.id).map((q) => q.color));
+    $$("button", palette).forEach((b) => {
+      b.disabled = taken.has(b.dataset.hex);
+      b.setAttribute("aria-pressed", String(b.dataset.hex === p.color));
+    });
+  }
+
+  /* — curseurs — */
+  function createAxis(axis) {
+    const id = axis.id;
+    const field = (key, label, extra) => {
+      const input = h("input", { type: "text", class: "champ" + (extra || ""), maxlength: key === "note" ? "140" : "40", "aria-label": label });
+      if (key === "note") input.placeholder = "Ligne d'explication (facultative)";
+      input.addEventListener("change", () => {
+        const v = input.value.trim();
+        const found = findAxis(config, id);
+        if (!v && key !== "note") { input.value = found ? found.axis[key] : ""; return; }
+        updateConfig((c) => { const f = findAxis(c, id); if (f) f.axis[key] = v; });
+      });
+      return input;
+    };
+    return h("li", { class: "axe-row" },
+      field("a", "Premier pôle"),
+      h("span", { class: "fleche", text: "↔", "aria-hidden": "true" }),
+      field("b", "Second pôle"),
+      confirmButton("Retirer", () => updateConfig((c) => { const f = findAxis(c, id); if (f) f.list.splice(f.index, 1); })),
+      field("note", "Ligne d'explication", " axe-note"));
+  }
+
+  function updateAxis(el, axis) {
+    const [a, b, note] = $$("input", el);
+    setValue(a, axis.a);
+    setValue(b, axis.b);
+    setValue(note, axis.note || "");
+  }
+
+  function addAxis(pick, listEl) {
+    const id = uid();
+    updateConfig((c) => pick(c).push({ id, a: "Pôle A", b: "Pôle B", note: "" }));
+    focusNew(listEl(), id);
+  }
+
+  function createGroup(g) {
+    const id = g.id;
+    const title = h("input", { type: "text", class: "champ champ-titre", maxlength: "50", "aria-label": "Titre du groupe de curseurs" });
+    title.addEventListener("change", () => updateConfig((c) => { const x = c.sliderGroups.find((q) => q.id === id); if (x) x.title = title.value.trim(); }));
+    const list = h("ul", { class: "liste-reglages" });
+    const add = h("button", {
+      type: "button", class: "btn", text: "Ajouter un curseur",
+      onclick: () => addAxis((c) => c.sliderGroups.find((q) => q.id === id).axes, () => list),
+    });
+    return h("div", { class: "groupe-reglages" }, title, list, add);
+  }
+
+  function render() {
+    setValue($("#rg-projet"), config.projectName);
+    syncList($("#rg-participants"), config.participants, (p) => p.id, createParticipant, updateParticipant);
+    $("#rg-ajout-participant").disabled = config.participants.length >= MAX_PARTICIPANTS;
+    syncList($("#rg-groupes"), config.sliderGroups, (g) => g.id, createGroup, (el, g) => {
+      setValue($(".champ-titre", el), g.title || "");
+      syncList($("ul", el), g.axes, (a) => a.id, createAxis, updateAxis);
+    });
+    syncList($("#rg-ton"), config.toneAxes, (a) => a.id, createAxis, updateAxis);
+
+    const link = new URL(location.href);
+    link.hash = "";
+    link.search = "?atelier=" + ATELIER;
+    setText($("#rg-lien"), `Atelier en cours : ${ATELIER} — ${link.protocol === "file:" || link.protocol === "about:" ? "?atelier=" + ATELIER : link.href}`);
+  }
+
+  $("#rg-projet").addEventListener("change", (e) => updateConfig((c) => (c.projectName = e.target.value.trim())));
+  $("#rg-ajout-participant").addEventListener("click", () => {
+    if (config.participants.length >= MAX_PARTICIPANTS) return;
+    const id = uid();
+    updateConfig((c) => {
+      const used = new Set(c.participants.map((p) => p.color));
+      const free = PALETTE.find((col) => !used.has(col.hex)) || PALETTE[c.participants.length % PALETTE.length];
+      c.participants.push({ id, name: `Participant·e ${c.participants.length + 1}`, color: free.hex });
+    });
+    focusNew($("#rg-participants"), id);
+  });
+  $("#rg-ajout-ton").addEventListener("click", () => addAxis((c) => c.toneAxes, () => $("#rg-ton")));
+  $("#rg-atelier-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const slug = slugify($("#rg-atelier-nom").value);
+    if (!slug) { $("#rg-atelier-nom").focus(); return; }
+    // Un suffixe aléatoire rend le lien difficile à deviner.
+    location.search = "?atelier=" + slug + "-" + Math.random().toString(36).slice(2, 6);
+  });
+
+  return { render, onData() {}, onIdentity() {} };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   13. DÉMARRAGE
+   ══════════════════════════════════════════════════════════════════════ */
+const modules = [];
+const watchers = {};
+
+function renderAll() {
+  renderIdentity();
+  modules.forEach((m) => m.render());
+}
+
+async function start() {
+  initNav();
+
+  const banner = $("#etat-base");
+  const wantsShared = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+  if (wantsShared) {
+    try {
+      store = await createFirestoreStore(ATELIER);
+      config = await store.loadConfig();
+    } catch (err) {
+      console.error(err);
+      store = null;
+      banner.hidden = false;
+      banner.textContent = "La base partagée n'a pas pu être jointe : les réponses restent pour l'instant dans ce navigateur.";
+    }
+  } else {
+    banner.hidden = false;
+    banner.textContent = "Mode local : les réponses restent dans ce navigateur. Pour les partager entre appareils, relier la base (voir LISEZ-MOI).";
+  }
+  if (!store) {
+    store = createLocalStore(ATELIER);
+    config = await store.loadConfig();
+  }
+  if (!config) {
+    config = defaultConfig();
+    await store.saveConfig(config);
+  }
+  config = normalizeConfig(config);
+  me = safeStorage.get(ME_KEY) || null;
+
+  const sliders = createSliderModule({
+    rootId: "module-1", col: "curseurs",
+    groups: () => config.sliderGroups,
+    savedMessage: "Curseurs enregistrés.",
+    emptyMessage: "Personne n'a encore enregistré ses curseurs.",
+    radarLabel: "Radar de positionnement",
+  });
+  const map = createMapModule();
+  const brandKey = createBrandKeyModule();
+  const archetypes = createArchetypeModule();
+  const tone = createSliderModule({
+    rootId: "module-5", col: "ton",
+    groups: () => [{ id: "ton", title: "", axes: config.toneAxes }],
+    savedMessage: "Ton de voix enregistré.",
+    emptyMessage: "Personne n'a encore enregistré son ton de voix.",
+    radarLabel: "Radar du ton de voix",
+  });
+  const settings = createSettingsModule();
+  modules.push(sliders, map, brandKey, archetypes, tone, settings);
+  Object.assign(watchers, { curseurs: sliders, points: map, phrases: brandKey, archetypes, ton: tone });
+
+  renderAll();
+
+  store.watchConfig((incoming) => {
+    if (!incoming) return;
+    config = normalizeConfig(incoming);
+    renderAll();
+  });
+  Object.keys(watchers).forEach((col) => {
+    store.watch(col, (docs) => {
+      data[col] = docs;
+      watchers[col].onData();
+    });
+  });
+}
+
+start();
+})();
+
+</script>
+</body>
+</html>
